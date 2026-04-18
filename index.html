@@ -436,9 +436,13 @@ async function startCam() {
       video:{facingMode:'user',width:{ideal:1280},height:{ideal:720}},audio:false
     });
     const v=document.getElementById('videoEl');
-    v.srcObject=stream; v.style.transform='scaleX(-1)';
-    v.onloadedmetadata=()=>{videoReady=true;};
-    setStat('on','🤚 손바닥을 카메라에 보여주세요!');
+    v.srcObject=stream;
+    v.style.transform='scaleX(-1)';
+    v.onloadeddata=()=>{
+      v.play();
+      videoReady=true;
+      setStat('on','🤚 손바닥을 카메라에 보여주세요!');
+    };
     toast('📷 카메라 연결됨!');
   } catch(e){
     setStat('','⚠️ 카메라 권한을 허용해주세요');
@@ -946,8 +950,17 @@ function setBg(type,val){
   bgType=type; bgVal=val||null;
   const video=document.getElementById('videoEl');
   const va=document.getElementById('viewArea');
-  if(type==='camera'){video.style.display='block';va.style.background='#111';bgImg=null;}
-  else{
+  if(type==='camera'){
+    video.style.display='block';
+    video.style.visibility='visible';
+    va.style.background='#111';
+    bgImg=null;
+    // 카메라 스트림 재연결
+    if(stream && video.srcObject!==stream){
+      video.srcObject=stream;
+      video.play();
+    }
+  } else {
     video.style.display='none';
     if(type==='color') va.style.background=val;
     else if(type==='grad') va.style.background=val;
