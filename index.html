@@ -563,25 +563,18 @@ function drawSingleFrameBg(ctx,x,y,w,h,fid){
   if(bg){ctx.fillStyle=bg;ctx.fillRect(x,y,w,h);}
 
   if(fid==='film'){
-    // 양쪽 흰색 필름 스트립 영역
-    const stripW=18;
-    ctx.fillStyle='#fafafa';
+    const stripW=20;
+    // 검정 필름 띠
+    ctx.fillStyle='#222';
     ctx.fillRect(x,y,stripW,h);
     ctx.fillRect(x+w-stripW,y,stripW,h);
-    // 필름 구멍 (옅은 회색)
-    ctx.fillStyle='#d5d5d5';
-    for(let i=0;i<9;i++){
-      const hy=y+8+i*(h-16)/8;
-      ctx.beginPath();ctx.roundRect(x+3,hy,12,9,2);ctx.fill();
-      ctx.beginPath();ctx.roundRect(x+w-15,hy,12,9,2);ctx.fill();
-    }
-    // 구멍 테두리
-    ctx.strokeStyle='#bbb';
-    ctx.lineWidth=1;
-    for(let i=0;i<9;i++){
-      const hy=y+8+i*(h-16)/8;
-      ctx.beginPath();ctx.roundRect(x+3,hy,12,9,2);ctx.stroke();
-      ctx.beginPath();ctx.roundRect(x+w-15,hy,12,9,2);ctx.stroke();
+    // 흰색 구멍
+    for(let i=0;i<10;i++){
+      const hy=y+5+i*(h-10)/9;
+      ctx.fillStyle='#fff';
+      ctx.beginPath();ctx.roundRect(x+4,hy,12,8,2);ctx.fill();
+      ctx.fillStyle='#fff';
+      ctx.beginPath();ctx.roundRect(x+w-16,hy,12,8,2);ctx.fill();
     }
   }
 }
@@ -635,11 +628,10 @@ function drawSingleFrameOverlay(ctx,x,y,w,h,fid){
     ctx.fillRect(x,y+h-28,w,28);
   }
   if(fid==='film'){
-    // 필름 스트립 중앙에 얇은 구분선 (위아래)
-    ctx.strokeStyle='#e0e0e0';
-    ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(x+18,y);ctx.lineTo(x+18,y+h);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(x+w-18,y);ctx.lineTo(x+w-18,y+h);ctx.stroke();
+    // 띠 경계 구분선만 가볍게
+    ctx.strokeStyle='#bbb';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(x+20,y);ctx.lineTo(x+20,y+h);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x+w-20,y);ctx.lineTo(x+w-20,y+h);ctx.stroke();
   }
 }
 function redrawStrip(){if(shots.length>0)buildStrip();}
