@@ -9,30 +9,27 @@
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
 <style>
 :root{
-  --pink:#ff6b9d;--purple:#c77dff;--yellow:#ffd166;--mint:#06d6a0;
-  --card:#fff;--text:#3d2b4e;--radius:20px;--shadow:0 8px 32px rgba(255,107,157,0.18);
+  --pink:#ff6b9d;--purple:#c77dff;--mint:#06d6a0;
+  --card:#fff;--text:#3d2b4e;--radius:20px;
+  --shadow:0 8px 32px rgba(255,107,157,0.18);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-body{
-  font-family:'Noto Sans KR',sans-serif;
+body{font-family:'Noto Sans KR',sans-serif;
   background:linear-gradient(135deg,#ffeef8 0%,#f0e6ff 50%,#e6f4ff 100%);
   min-height:100vh;display:flex;flex-direction:column;align-items:center;
-  padding:10px;color:var(--text);overflow-x:hidden;
-}
+  padding:10px;color:var(--text);overflow-x:hidden;}
 h1{font-family:'Nanum Pen Script',cursive;font-size:2.2rem;color:var(--pink);
   text-shadow:2px 2px 0 #ffe0ef;margin-bottom:2px;letter-spacing:2px;}
 .subtitle{font-size:0.75rem;color:#b084c9;margin-bottom:12px;letter-spacing:1px;}
 
-/* TABS */
 .tabs{display:flex;gap:6px;margin-bottom:14px;background:rgba(255,255,255,0.6);
   border-radius:40px;padding:5px;box-shadow:0 2px 12px rgba(200,120,200,0.12);}
 .tab-btn{border:none;background:none;padding:7px 18px;border-radius:30px;
-  font-size:0.82rem;font-family:'Noto Sans KR';cursor:pointer;
-  color:#b084c9;font-weight:600;transition:all .25s;}
+  font-size:0.82rem;font-family:'Noto Sans KR';cursor:pointer;color:#b084c9;font-weight:600;transition:all .25s;}
 .tab-btn.active{background:linear-gradient(135deg,var(--pink),var(--purple));
   color:white;box-shadow:0 3px 10px rgba(255,107,157,0.35);}
 
-/* ─── CAMERA TAB ─── */
+/* ── CAMERA TAB ── */
 .cam-layout{width:100%;max-width:900px;display:grid;grid-template-columns:1fr 265px;gap:14px;align-items:start;}
 @media(max-width:680px){
   .cam-layout{grid-template-columns:1fr;}
@@ -40,23 +37,12 @@ h1{font-family:'Nanum Pen Script',cursive;font-size:2.2rem;color:var(--pink);
   .panel-card{min-width:200px;}
 }
 .camera-wrap{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
-.view-area{position:relative;background:#111;overflow:hidden;display:flex;align-items:center;justify-content:center;}
-#videoEl{width:100%;height:100%;object-fit:cover;display:block;}
-#handCanvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:5;}
 
-/* palm ring */
-#palmRing{
-  position:absolute;width:80px;height:80px;border-radius:50%;
-  border:3.5px solid transparent;display:none;align-items:center;justify-content:center;
-  font-size:2rem;pointer-events:none;transform:translate(-50%,-50%);z-index:8;
-  transition:border-color .2s;
-}
-#palmRing.detected{border-color:var(--pink);animation:pulse 0.75s infinite;}
-@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,107,157,.6);}70%{box-shadow:0 0 0 16px rgba(255,107,157,0);}100%{box-shadow:0 0 0 0 rgba(255,107,157,0);}}
-
-/* hold progress arc */
-#holdArc{position:absolute;pointer-events:none;transform:translate(-50%,-50%);z-index:9;display:none;}
-
+/* composite view: video + bg canvas stacked */
+.view-area{position:relative;background:#111;overflow:hidden;width:100%;}
+#bgCanvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;}
+#videoEl{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:2;display:block;}
+#handCanvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:5;display:none;}
 #countdown{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
   font-family:'Nanum Pen Script',cursive;font-size:9rem;color:white;
   text-shadow:0 0 40px rgba(255,107,157,.9),3px 5px 0 rgba(0,0,0,.3);
@@ -81,34 +67,29 @@ h1{font-family:'Nanum Pen Script',cursive;font-size:2.2rem;color:var(--pink);
   font-family:'Noto Sans KR';font-size:0.8rem;font-weight:700;transition:all .2s;}
 .btn-primary{background:linear-gradient(135deg,var(--pink),var(--purple));color:white;
   box-shadow:0 4px 14px rgba(255,107,157,.4);}
-.btn-primary:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(255,107,157,.5);}
+.btn-primary:hover{transform:translateY(-2px);}
 .btn-secondary{background:#f5f0ff;color:var(--purple);border:1.5px solid #e0cfff;}
 .btn-danger{background:#fff0f3;color:#e05c7a;border:1.5px solid #ffd0dc;}
 .btn-sm{padding:6px 13px;font-size:0.74rem;}
-
 .timer-row{display:flex;gap:4px;margin-left:auto;}
 .tbtn{border:1.5px solid #e0cfff;background:#f5f0ff;color:var(--purple);border-radius:20px;
   padding:5px 10px;font-size:0.73rem;cursor:pointer;font-family:'Noto Sans KR';font-weight:600;transition:all .2s;}
 .tbtn.active{background:var(--purple);color:white;border-color:var(--purple);}
-
 .hand-guide{padding:8px 14px;background:#fff8ff;border-top:1px solid #f5eeff;
   font-size:0.73rem;color:#b084c9;line-height:1.6;}
 .hand-guide strong{color:var(--pink);}
 
-/* PANEL */
 .panel-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:13px;}
 .panel-title{font-size:0.73rem;font-weight:700;color:var(--purple);
   text-transform:uppercase;letter-spacing:1.5px;margin-bottom:9px;}
 .cam-side{display:flex;flex-direction:column;gap:11px;}
 
-/* ratio */
 .ratio-grid{display:flex;gap:6px;flex-wrap:wrap;}
 .ratio-btn{display:flex;flex-direction:column;align-items:center;gap:3px;
   border:2px solid #f0e6ff;border-radius:10px;padding:6px 8px;
   background:#faf5ff;cursor:pointer;transition:all .2s;font-size:0.67rem;color:#9a7ab8;}
 .ratio-icon{background:#e6d5ff;border-radius:3px;}
 .ratio-btn.active{border-color:var(--purple);background:#f0e6ff;color:var(--purple);font-weight:700;}
-
 .shot-picker{display:flex;gap:5px;flex-wrap:wrap;}
 .sshot{border:2px solid #f0e6ff;border-radius:10px;padding:5px 11px;background:#faf5ff;
   cursor:pointer;font-size:0.78rem;color:#9a7ab8;font-family:'Noto Sans KR';font-weight:600;transition:all .2s;}
@@ -128,37 +109,39 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;heigh
 .bg-tab.active{background:linear-gradient(135deg,var(--pink),var(--purple));color:white;}
 .bg-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:3px;}
 .sw{border-radius:5px;aspect-ratio:1;cursor:pointer;border:2.5px solid transparent;
-  transition:all .2s;display:flex;align-items:center;justify-content:center;font-size:0.8rem;}
+  transition:all .2s;display:flex;align-items:center;justify-content:center;font-size:0.75rem;}
 .sw.active{border-color:var(--pink);}
 .sw:hover{transform:scale(1.1);}
 .stab{display:none;}.stab.active{display:block;}
-
 .fchips{display:flex;flex-wrap:wrap;gap:4px;}
 .fchip{border:1.5px solid #f0e6ff;border-radius:15px;padding:4px 9px;background:#faf5ff;
   cursor:pointer;font-size:0.67rem;color:#9a7ab8;font-family:'Noto Sans KR';font-weight:600;transition:all .2s;}
 .fchip.active{border-color:var(--purple);background:#f0e6ff;color:var(--purple);font-weight:700;}
-
 .upload-area{border:2px dashed #e0cfff;border-radius:10px;padding:12px;text-align:center;
   cursor:pointer;color:#b084c9;font-size:0.73rem;transition:all .2s;background:#fdf9ff;}
 .upload-area:hover{border-color:var(--pink);background:#fff0f9;}
 #bgUpload{display:none;}
 
-/* ─── RESULT TAB ─── */
+/* ── RESULT TAB ── */
 .result-layout{width:100%;max-width:900px;display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:start;}
-@media(max-width:680px){.result-layout{grid-template-columns:1fr;}#stripWrap{display:flex;justify-content:center;flex-direction:column;align-items:center;}}
+@media(max-width:680px){.result-layout{grid-template-columns:1fr;}
+  #stripWrap{display:flex;justify-content:center;flex-direction:column;align-items:center;}}
 #stripCanvas{border-radius:12px;box-shadow:0 8px 30px rgba(200,100,200,.25);max-width:320px;width:100%;display:block;}
-#stickerOverlay{position:absolute;top:0;left:0;cursor:crosshair;}
+#stickerOverlay{position:absolute;top:0;left:0;}
 #rslayer{position:relative;display:inline-block;}
 .strip-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px;}
 .result-side{display:flex;flex-direction:column;gap:11px;}
 
-.frame-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;}
-.fbtn{border:2px solid #f0e6ff;border-radius:10px;padding:6px 3px;background:#faf5ff;
-  cursor:pointer;font-size:0.66rem;color:#9a7ab8;transition:all .2s;text-align:center;font-family:'Noto Sans KR';}
-.fbtn.active{border-color:var(--pink);background:#fff0f6;color:var(--pink);font-weight:700;}
-.ficon{font-size:1.2rem;display:block;margin-bottom:2px;}
+/* per-photo frame selector */
+.photo-frame-wrap{display:flex;flex-direction:column;gap:8px;}
+.pf-row{display:flex;align-items:center;gap:6px;}
+.pf-label{font-size:0.7rem;color:#b084c9;font-weight:600;min-width:32px;}
+.pf-chips{display:flex;gap:3px;flex-wrap:wrap;flex:1;}
+.pf-chip{border:1.5px solid #f0e6ff;border-radius:8px;padding:3px 7px;background:#faf5ff;
+  cursor:pointer;font-size:0.9rem;transition:all .2s;}
+.pf-chip.active{border-color:var(--pink);background:#fff0f6;}
 
-.sticker-grid{display:flex;flex-wrap:wrap;gap:4px;max-height:115px;overflow-y:auto;}
+.sticker-grid{display:flex;flex-wrap:wrap;gap:4px;max-height:100px;overflow-y:auto;}
 .spick{font-size:1.4rem;cursor:pointer;padding:3px;border-radius:7px;
   transition:transform .2s;background:#faf5ff;border:1.5px solid #f0e6ff;}
 .spick:hover{transform:scale(1.25);background:#ffe0f0;}
@@ -170,6 +153,18 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;heigh
 .crow{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:5px;}
 .cdot{width:12px;height:12px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .2s;flex-shrink:0;}
 .cdot.active{border-color:var(--text);transform:scale(1.2);}
+
+/* handwriting canvas */
+#drawCanvas{border-radius:10px;border:1.5px solid #e0cfff;cursor:crosshair;
+  touch-action:none;display:block;width:100%;background:transparent;}
+.draw-tools{display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-bottom:6px;}
+.draw-color{width:20px;height:20px;border-radius:50%;cursor:pointer;
+  border:2px solid transparent;transition:all .2s;flex-shrink:0;}
+.draw-color.active{border-color:#333;transform:scale(1.2);}
+.draw-size{display:flex;gap:3px;}
+.dsz{border:1.5px solid #e0cfff;border-radius:8px;padding:3px 8px;background:#faf5ff;
+  cursor:pointer;font-size:0.7rem;color:#9a7ab8;font-family:'Noto Sans KR';transition:all .2s;}
+.dsz.active{border-color:var(--purple);background:#f0e6ff;color:var(--purple);}
 
 #toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(14px);
   background:linear-gradient(135deg,var(--pink),var(--purple));color:white;
@@ -189,14 +184,13 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;heigh
   <button class="tab-btn" id="tRes" onclick="switchTab('res')">🎨 꾸미기 & 결과</button>
 </div>
 
-<!-- ═══ CAMERA TAB ═══ -->
+<!-- ══ CAMERA TAB ══ -->
 <div id="camTab" class="cam-layout">
   <div class="camera-wrap">
     <div class="view-area" id="viewArea" style="height:360px;">
+      <canvas id="bgCanvas"></canvas>
       <video id="videoEl" autoplay playsinline muted></video>
       <canvas id="handCanvas"></canvas>
-      <div id="palmRing">🤚</div>
-      <canvas id="holdArc" width="96" height="96"></canvas>
       <div id="countdown"></div>
       <div class="flash" id="flash"></div>
     </div>
@@ -221,12 +215,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;heigh
       </div>
     </div>
     <div class="hand-guide">
-      🤚 <strong>손바닥을 활짝 펼쳐</strong> 카메라에 보여주세요 → 감지되면 <strong>3초 카운트다운</strong> 후 자동 촬영!<br>
-      손을 내리거나 주먹을 쥐면 취소돼요.
+      🤚 <strong>손바닥을 활짝 펼쳐</strong> 카메라에 보여주세요 → <strong>3초 카운트다운</strong> 후 자동 촬영!
     </div>
   </div>
 
-  <!-- Side (camera settings) -->
   <div class="cam-side">
     <div class="panel-card">
       <div class="panel-title">📷 컷 수</div>
@@ -247,14 +239,16 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;heigh
       </div>
     </div>
     <div class="panel-card">
-      <div class="panel-title">🎨 배경</div>
+      <div class="panel-title">🎨 배경 <span style="font-size:0.65rem;color:#ccc;font-weight:400;">(카메라 위에 합성)</span></div>
       <div class="bg-tabs">
-        <button class="bg-tab active" onclick="switchBgTab('c',this)">컬러</button>
+        <button class="bg-tab active" onclick="switchBgTab('c',this)">없음</button>
         <button class="bg-tab" onclick="switchBgTab('g',this)">그라데</button>
         <button class="bg-tab" onclick="switchBgTab('p',this)">패턴</button>
         <button class="bg-tab" onclick="switchBgTab('u',this)">내 사진</button>
       </div>
-      <div id="bgC" class="stab active"><div class="bg-grid" id="colorGrid"></div></div>
+      <div id="bgC" class="stab active">
+        <div class="bg-grid" id="colorGrid"></div>
+      </div>
       <div id="bgG" class="stab"><div class="bg-grid" id="gradGrid"></div></div>
       <div id="bgP" class="stab"><div class="bg-grid" id="patGrid"></div></div>
       <div id="bgU" class="stab">
@@ -280,7 +274,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;heigh
   </div>
 </div>
 
-<!-- ═══ RESULT TAB ═══ -->
+<!-- ══ RESULT TAB ══ -->
 <div id="resTab" style="display:none;" class="result-layout">
   <div id="stripWrap">
     <div id="rslayer">
@@ -289,21 +283,28 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;heigh
     </div>
     <div class="strip-actions">
       <button class="btn btn-primary btn-sm" onclick="savePhoto()">💾 저장</button>
+      <button class="btn btn-danger btn-sm" onclick="clearResult()">🗑 결과 지우기</button>
       <button class="btn btn-secondary btn-sm" onclick="switchTab('cam')">📷 다시 찍기</button>
     </div>
-    <p style="font-size:0.68rem;color:#c0a0d0;margin-top:5px;text-align:center;">저장 시 스티커·텍스트 포함돼요 📱</p>
+    <p style="font-size:0.68rem;color:#c0a0d0;margin-top:5px;text-align:center;">저장 시 꾸미기 내용 모두 포함 📱</p>
   </div>
 
   <div class="result-side">
+
+    <!-- Per-photo frames -->
     <div class="panel-card">
-      <div class="panel-title">🖼 프레임</div>
-      <div class="frame-grid" id="frameGrid"></div>
+      <div class="panel-title">🖼 사진별 프레임</div>
+      <div class="photo-frame-wrap" id="photoFrameWrap"></div>
     </div>
+
+    <!-- Stickers -->
     <div class="panel-card">
       <div class="panel-title">🎀 스티커</div>
       <div class="sticker-grid" id="stickerGrid"></div>
-      <button class="btn btn-danger btn-sm" style="margin-top:7px;width:100%;" onclick="clearOverlay()">전체 삭제</button>
+      <button class="btn btn-danger btn-sm" style="margin-top:7px;width:100%;" onclick="clearOverlayItems()">스티커 전체 삭제</button>
     </div>
+
+    <!-- Text -->
     <div class="panel-card">
       <div class="panel-title">✏️ 텍스트</div>
       <div class="text-row">
@@ -311,8 +312,34 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;heigh
         <button class="btn btn-primary btn-sm" onclick="addText()">추가</button>
       </div>
       <div class="crow" id="txtColors"></div>
-      <div style="font-size:0.68rem;color:#ccc;">색상 선택 후 추가 → 드래그로 위치 이동</div>
     </div>
+
+    <!-- Handwriting -->
+    <div class="panel-card">
+      <div class="panel-title">✍️ 손글씨</div>
+      <div class="draw-tools">
+        <div class="draw-color active" id="dc0" style="background:#ff6b9d;" onclick="setDrawColor('#ff6b9d',this)"></div>
+        <div class="draw-color" id="dc1" style="background:#c77dff;" onclick="setDrawColor('#c77dff',this)"></div>
+        <div class="draw-color" id="dc2" style="background:#ffd166;" onclick="setDrawColor('#ffd166',this)"></div>
+        <div class="draw-color" id="dc3" style="background:#06d6a0;" onclick="setDrawColor('#06d6a0',this)"></div>
+        <div class="draw-color" id="dc4" style="background:#4facfe;" onclick="setDrawColor('#4facfe',this)"></div>
+        <div class="draw-color" id="dc5" style="background:#1a1a2e;" onclick="setDrawColor('#1a1a2e',this)"></div>
+        <div class="draw-color" id="dc6" style="background:#ffffff;border:1.5px solid #ddd;" onclick="setDrawColor('#ffffff',this)"></div>
+        <div class="draw-size">
+          <button class="dsz active" onclick="setDrawSize(3,this)">S</button>
+          <button class="dsz" onclick="setDrawSize(6,this)">M</button>
+          <button class="dsz" onclick="setDrawSize(12,this)">L</button>
+        </div>
+      </div>
+      <canvas id="drawCanvas" height="100"></canvas>
+      <div style="display:flex;gap:5px;margin-top:5px;">
+        <button class="btn btn-primary btn-sm" style="flex:1;" onclick="stampDrawing()">📌 붙이기</button>
+        <button class="btn btn-danger btn-sm" style="flex:1;" onclick="clearDrawCanvas()">지우기</button>
+      </div>
+      <div style="font-size:0.68rem;color:#ccc;margin-top:4px;">손글씨 쓰고 붙이기 → 스트립에 추가돼요</div>
+    </div>
+
+    <!-- Post correction -->
     <div class="panel-card">
       <div class="panel-title">💎 후보정</div>
       <div class="srow"><span class="sl">어둡</span>
@@ -326,32 +353,43 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;heigh
       <div class="panel-title" style="margin-top:8px;">🎞 필터</div>
       <div class="fchips" id="resFilterChips"></div>
     </div>
+
   </div>
 </div>
 
 <div id="toast"></div>
 
 <script>
-// ──────────────────────────────────────────────
+// ══════════════════════════════════════════
 // STATE
-// ──────────────────────────────────────────────
+// ══════════════════════════════════════════
 let stream=null, mpHands=null, mpCam=null;
 let shotCount=4, shots=[], timerDelay=3, isMirrored=true;
 let rW=3, rH=4;
 let camFilter='none', resultFilter='none';
-let bgType='camera', bgVal=null, bgImg=null;
-let currentFrame='none';
+// bg overlay (drawn on bgCanvas behind video)
+let bgType='none', bgVal=null, bgImgObj=null;
+let bgAnimFrame=null;
+let currentFrame='none'; // legacy kept for compat
+let perPhotoFrames=[]; // array of frame ids per shot
 let isCapturing=false, cdRunning=false, videoReady=false;
 let palmHeld=false, palmHeldStart=0;
-let palmCX=0, palmCY=0;
 let overlayItems=[], dragging=null, dragOX=0, dragOY=0;
 let txtColor='#ff6b9d';
+// drawing
+let drawColor='#ff6b9d', drawSize=3;
+let isDrawing=false, lastDX=0, lastDY=0;
 
-// ──────────────────────────────────────────────
+// ══════════════════════════════════════════
 // DATA
-// ──────────────────────────────────────────────
-const COLORS=['camera','#ff6b9d','#c77dff','#7bb7fa','#06d6a0','#ffd166',
-  '#ef476f','#f8edeb','#e0fbfc','#fff9c4','#fce4ec','#1a1a2e','#2d6a4f'];
+// ══════════════════════════════════════════
+const OVERLAYS=[
+  {id:'none',l:'없음',style:null},
+  {id:'soft',l:'소프트',style:'rgba(255,240,246,0.35)'},
+  {id:'dark',l:'어둠',style:'rgba(0,0,0,0.3)'},
+  {id:'warm',l:'따뜻',style:'rgba(255,200,100,0.2)'},
+  {id:'cool',l:'차가운',style:'rgba(100,180,255,0.2)'},
+];
 const GRADS=[
   'linear-gradient(135deg,#ff6b9d,#c77dff)',
   'linear-gradient(135deg,#a8edea,#fed6e3)',
@@ -382,12 +420,11 @@ const FILTERS=[
   {n:'드림',c:'saturate(1.5) brightness(1.1) contrast(0.9)',l:'✨ 드림'},
   {n:'선명',c:'saturate(1.4) contrast(1.15)',l:'💎 선명'},
 ];
-const FRAMES=[
-  {id:'none',l:'없음',i:'⬜'},{id:'white',l:'화이트',i:'🤍'},
-  {id:'black',l:'블랙',i:'🖤'},{id:'pink',l:'핑크',i:'🩷'},
-  {id:'polaroid',l:'폴라로이드',i:'📸'},{id:'film',l:'필름',i:'🎞'},
-  {id:'star',l:'별',i:'⭐'},{id:'flower',l:'꽃',i:'🌸'},
-  {id:'rainbow',l:'무지개',i:'🌈'},
+// Per-photo frame options
+const PFRAMES=[
+  {id:'none',i:'⬜'},{id:'white',i:'🤍'},{id:'black',i:'🖤'},
+  {id:'pink',i:'🩷'},{id:'polaroid',i:'📸'},{id:'film',i:'🎞'},
+  {id:'star',i:'⭐'},{id:'flower',i:'🌸'},{id:'rainbow',i:'🌈'},
 ];
 const STICKERS=[
   '✨','⭐','🌟','💫','❤️','🩷','🧡','💛','💚','💙','💜','🖤',
@@ -397,15 +434,14 @@ const STICKERS=[
 ];
 const TCOLORS=['#ff6b9d','#c77dff','#ffd166','#06d6a0','#4facfe','#1a1a2e','#ffffff','#ef476f'];
 
-// ──────────────────────────────────────────────
+// ══════════════════════════════════════════
 // INIT
-// ──────────────────────────────────────────────
-async function init() {
-  // roundRect polyfill for older Safari
+// ══════════════════════════════════════════
+async function init(){
+  // roundRect polyfill
   if(!CanvasRenderingContext2D.prototype.roundRect){
     CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){
       r=Math.min(r,w/2,h/2);
-      this.beginPath();
       this.moveTo(x+r,y);
       this.lineTo(x+w-r,y);this.arcTo(x+w,y,x+w,y+r,r);
       this.lineTo(x+w,y+h-r);this.arcTo(x+w,y+h,x+w-r,y+h,r);
@@ -415,37 +451,38 @@ async function init() {
     };
   }
   buildColorGrid(); buildGradGrid(); buildPatGrid();
-  buildFilterChips('camFilterChips', false);
-  buildFilterChips('resFilterChips', true);
-  buildFrameGrid(); buildStickerGrid(); buildTxtColors();
+  buildFilterChips('camFilterChips',false);
+  buildFilterChips('resFilterChips',true);
+  buildStickerGrid(); buildTxtColors();
   buildDotRow(); updateAspect();
-  // Show initial slider values
   document.getElementById('brVal').textContent='1.0';
   document.getElementById('blVal').textContent='0';
   await startCam();
   initMediaPipe();
   initOverlay();
+  initDrawCanvas();
 }
 
-// ──────────────────────────────────────────────
+// ══════════════════════════════════════════
 // CAMERA
-// ──────────────────────────────────────────────
-async function startCam() {
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({
+// ══════════════════════════════════════════
+async function startCam(){
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({
       video:{facingMode:'user',width:{ideal:1280},height:{ideal:720}},audio:false
     });
     const v=document.getElementById('videoEl');
     v.srcObject=stream;
     v.style.transform='scaleX(-1)';
     v.onloadeddata=()=>{
-      v.play();
+      v.play().catch(()=>{});
       videoReady=true;
       setStat('on','🤚 손바닥을 카메라에 보여주세요!');
+      startBgLoop();
     };
     toast('📷 카메라 연결됨!');
-  } catch(e){
-    setStat('','⚠️ 카메라 권한을 허용해주세요');
+  }catch(e){
+    setStat('','⚠️ 카메라 권한을 허용해주세요 (HTTPS 필요)');
     toast('카메라 접근 권한이 필요해요');
   }
 }
@@ -459,10 +496,59 @@ function setStat(cls,msg){
   document.getElementById('stext').textContent=msg;
 }
 
-// ──────────────────────────────────────────────
-// MEDIAPIPE
-// ──────────────────────────────────────────────
-function initMediaPipe() {
+// ══════════════════════════════════════════
+// BG CANVAS LOOP (draws overlay behind video)
+// bgCanvas is behind video, video is always visible
+// We use CSS mix-blend-mode to overlay bg on video
+// Actually: bgCanvas draws the effect as an overlay ON TOP of video with transparency
+// Video stays visible always. bgCanvas drawn on top with opacity for overlay effects.
+// ══════════════════════════════════════════
+function startBgLoop(){
+  if(bgAnimFrame) cancelAnimationFrame(bgAnimFrame);
+  const bc=document.getElementById('bgCanvas');
+  const va=document.getElementById('viewArea');
+  // bgCanvas is ABOVE video (z-index:3) for overlay blending, but normally transparent
+  // When bg selected: draw color/gradient/pattern on bgCanvas with some opacity
+  // Video stays behind and visible through opacity
+  bc.style.zIndex='3';
+  bc.style.pointerEvents='none';
+  function loop(){
+    bc.width=va.offsetWidth; bc.height=va.offsetHeight;
+    const ctx=bc.getContext('2d');
+    ctx.clearRect(0,0,bc.width,bc.height);
+    if(bgType==='none'||bgType===null){
+      // nothing drawn, video fully visible
+    } else if(bgType==='color'){
+      // draw color at 85% opacity so it overlays video
+      ctx.globalAlpha=0.88;
+      ctx.fillStyle=bgVal;
+      ctx.fillRect(0,0,bc.width,bc.height);
+      ctx.globalAlpha=1;
+    } else if(bgType==='grad'){
+      ctx.globalAlpha=0.88;
+      drawGrad(ctx,bgVal,bc.width,bc.height);
+      ctx.globalAlpha=1;
+    } else if(bgType==='pat'){
+      ctx.globalAlpha=0.88;
+      ctx.fillStyle=bgVal.b;
+      ctx.fillRect(0,0,bc.width,bc.height);
+      drawPat(ctx,bgVal.p,bc.width,bc.height);
+      ctx.globalAlpha=1;
+    } else if(bgType==='image'&&bgImgObj){
+      ctx.globalAlpha=0.9;
+      const s=Math.max(bc.width/bgImgObj.width,bc.height/bgImgObj.height);
+      ctx.drawImage(bgImgObj,(bc.width-bgImgObj.width*s)/2,(bc.height-bgImgObj.height*s)/2,bgImgObj.width*s,bgImgObj.height*s);
+      ctx.globalAlpha=1;
+    }
+    bgAnimFrame=requestAnimationFrame(loop);
+  }
+  loop();
+}
+
+// ══════════════════════════════════════════
+// MEDIAPIPE — skeleton hidden, only status shown
+// ══════════════════════════════════════════
+function initMediaPipe(){
   if(typeof Hands==='undefined'){
     setStat('','손 인식 로딩 실패 — 직접 찍기 사용 가능');
     return;
@@ -471,7 +557,6 @@ function initMediaPipe() {
   mpHands.setOptions({maxNumHands:1,modelComplexity:0,
     minDetectionConfidence:0.65,minTrackingConfidence:0.5});
   mpHands.onResults(onHandResults);
-
   const v=document.getElementById('videoEl');
   mpCam=new Camera(v,{
     onFrame:async()=>{if(videoReady&&mpHands)await mpHands.send({image:v});},
@@ -480,105 +565,41 @@ function initMediaPipe() {
   mpCam.start();
 }
 
-function isPalmOpen(lm) {
-  const tips=[8,12,16,20], mcps=[5,9,13,17];
+function isPalmOpen(lm){
+  const tips=[8,12,16,20],mcps=[5,9,13,17];
   let open=0;
-  for(let i=0;i<tips.length;i++) if(lm[tips[i]].y < lm[mcps[i]].y) open++;
-  const thumbOpen=Math.abs(lm[4].x-lm[2].x)>0.05;
-  return open>=3 && thumbOpen;
+  for(let i=0;i<tips.length;i++) if(lm[tips[i]].y<lm[mcps[i]].y) open++;
+  return open>=3&&Math.abs(lm[4].x-lm[2].x)>0.05;
 }
 
-function onHandResults(res) {
-  const hc=document.getElementById('handCanvas');
-  const va=document.getElementById('viewArea');
-  hc.width=va.offsetWidth; hc.height=va.offsetHeight;
-  const ctx=hc.getContext('2d');
-  ctx.clearRect(0,0,hc.width,hc.height);
-
+function onHandResults(res){
+  // handCanvas is hidden — no visual feedback drawn
   if(cdRunning||isCapturing) return;
-
-  const ring=document.getElementById('palmRing');
-  const arc=document.getElementById('holdArc');
-
   if(res.multiHandLandmarks&&res.multiHandLandmarks.length>0){
     const lm=res.multiHandLandmarks[0];
     const open=isPalmOpen(lm);
-    const w=hc.width, h=hc.height;
-
-    // Draw skeleton
-    ctx.lineWidth=2;
-    ctx.strokeStyle=open?'rgba(255,107,157,0.75)':'rgba(200,160,255,0.4)';
-    [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],
-     [5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],
-     [13,17],[17,18],[18,19],[19,20],[0,17]
-    ].forEach(([a,b])=>{
-      ctx.beginPath();
-      ctx.moveTo((1-lm[a].x)*w, lm[a].y*h);
-      ctx.lineTo((1-lm[b].x)*w, lm[b].y*h);
-      ctx.stroke();
-    });
-    lm.forEach(p=>{
-      ctx.beginPath();
-      ctx.arc((1-p.x)*w,p.y*h,3,0,Math.PI*2);
-      ctx.fillStyle=open?'rgba(255,107,157,0.85)':'rgba(200,160,255,0.5)';
-      ctx.fill();
-    });
-
-    // Palm center
-    const cx=(1-(lm[0].x+lm[9].x)/2)*w;
-    const cy=((lm[0].y+lm[9].y)/2)*h;
-    palmCX=cx; palmCY=cy;
-
-    ring.style.display='flex';
-    ring.style.left=cx+'px'; ring.style.top=cy+'px';
-
     if(open){
-      ring.classList.add('detected');
       if(!palmHeld){
         palmHeld=true; palmHeldStart=Date.now();
-        setStat('ready','✅ 손바닥 감지! 유지하면 촬영 시작...');
-      }
-      // Draw hold arc
-      const elapsed=Date.now()-palmHeldStart;
-      const threshold=600;
-      const prog=Math.min(elapsed/threshold,1);
-
-      arc.style.display='block';
-      arc.style.left=cx+'px'; arc.style.top=cy+'px';
-      const ac=arc.getContext('2d');
-      ac.clearRect(0,0,96,96);
-      ac.strokeStyle='rgba(255,107,157,0.85)';
-      ac.lineWidth=4; ac.lineCap='round';
-      ac.beginPath();
-      ac.arc(48,48,38,-Math.PI/2,-Math.PI/2+prog*Math.PI*2);
-      ac.stroke();
-
-      if(prog>=1){
+        setStat('ready','✅ 손바닥 감지! 잠시 유지...');
+      } else if(Date.now()-palmHeldStart>700){
         palmHeld=false;
-        arc.style.display='none';
-        ring.classList.remove('detected');
-        ring.style.display='none';
         startCapture();
       }
     } else {
-      ring.classList.remove('detected');
       palmHeld=false;
-      arc.style.display='none';
       if(!cdRunning) setStat('on','🤚 손바닥을 활짝 펴주세요!');
     }
   } else {
-    ring.style.display='none'; ring.classList.remove('detected');
-    arc.style.display='none';
     palmHeld=false;
     if(!cdRunning&&!isCapturing) setStat('on','🤚 손바닥을 카메라에 보여주세요!');
   }
 }
 
-// ──────────────────────────────────────────────
+// ══════════════════════════════════════════
 // CAPTURE
-// ──────────────────────────────────────────────
+// ══════════════════════════════════════════
 function manualCapture(){startCapture();}
-
 function startCapture(){
   if(isCapturing||cdRunning) return;
   if(shots.length>=shotCount){toast('다 찍었어요! 🔄 다시 버튼 누르세요');return;}
@@ -587,16 +608,14 @@ function startCapture(){
     cdRunning=true;
     setStat('ready',`⏱ ${timerDelay}초 후 촬영!`);
     runCD(timerDelay,()=>{cdRunning=false;doCapture();});
-  } else {doCapture();}
+  } else doCapture();
 }
-
 function runCD(n,cb){
   const el=document.getElementById('countdown');
   el.style.display='flex'; el.textContent=n;
   if(n<=0){el.style.display='none';cb();return;}
   setTimeout(()=>runCD(n-1,cb),1000);
 }
-
 function doCapture(){
   isCapturing=true;
   const fl=document.getElementById('flash');
@@ -605,6 +624,7 @@ function doCapture(){
 
   const va=document.getElementById('viewArea');
   const video=document.getElementById('videoEl');
+  const bc=document.getElementById('bgCanvas');
   const vw=va.offsetWidth, vh=va.offsetHeight;
   const off=document.createElement('canvas');
   const dpr=Math.min(window.devicePixelRatio,2);
@@ -612,37 +632,29 @@ function doCapture(){
   const ctx=off.getContext('2d');
   ctx.scale(dpr,dpr);
 
-  // Draw background
-  if(bgType==='camera'){
-    ctx.save();
-    if(isMirrored){ctx.translate(vw,0);ctx.scale(-1,1);}
-    const br=parseFloat(document.getElementById('brSlider').value);
-    const bl=parseFloat(document.getElementById('blSlider').value);
-    let f=`brightness(${br})`;
-    if(camFilter!=='none') f+=' '+camFilter;
-    if(bl>0) f+=` blur(${bl}px)`;
-    ctx.filter=f;
-    ctx.drawImage(video,0,0,vw,vh);
-    ctx.restore();
-    ctx.filter='none';
-  } else if(bgType==='image'&&bgImg){
-    const s=Math.max(vw/bgImg.width,vh/bgImg.height);
-    ctx.drawImage(bgImg,(vw-bgImg.width*s)/2,(vh-bgImg.height*s)/2,bgImg.width*s,bgImg.height*s);
-  } else if(bgType==='color'){
-    ctx.fillStyle=bgVal; ctx.fillRect(0,0,vw,vh);
-  } else if(bgType==='grad'){
-    drawGrad(ctx,bgVal,vw,vh);
-  } else if(bgType==='pat'){
-    ctx.fillStyle=bgVal.b; ctx.fillRect(0,0,vw,vh);
-    drawPat(ctx,bgVal.p,vw,vh);
-  }
+  // 1. Draw video
+  ctx.save();
+  if(isMirrored){ctx.translate(vw,0);ctx.scale(-1,1);}
+  const br=parseFloat(document.getElementById('brSlider').value);
+  const bl=parseFloat(document.getElementById('blSlider').value);
+  let f=`brightness(${br})`;
+  if(camFilter!=='none') f+=' '+camFilter;
+  if(bl>0) f+=` blur(${bl}px)`;
+  ctx.filter=f;
+  ctx.drawImage(video,0,0,vw,vh);
+  ctx.restore();
+  ctx.filter='none';
+
+  // 2. Draw bg overlay on top
+  if(bgType!=='none'&&bgType!==null) ctx.drawImage(bc,0,0,vw,vh);
 
   shots.push(off);
+  perPhotoFrames.push('none');
   updateDots(); updateLabel();
   isCapturing=false;
 
   if(shots.length>=shotCount){
-    setTimeout(()=>{buildStrip();switchTab('res');},300);
+    setTimeout(()=>{buildStrip();buildPhotoFrameUI();switchTab('res');},300);
     toast('🎉 모든 컷 촬영 완료!');
   } else {
     toast(`📸 ${shots.length}/${shotCount} 촬영 완료!`);
@@ -650,15 +662,15 @@ function doCapture(){
   }
 }
 
-// ──────────────────────────────────────────────
+// ══════════════════════════════════════════
 // STRIP
-// ──────────────────────────────────────────────
+// ══════════════════════════════════════════
 const FW=290;
 function buildStrip(){
   const sc=document.getElementById('stripCanvas');
   const gap=8, pad=16;
-  const cols=(shotCount>=6)?2:1;
-  const rows=Math.ceil(shotCount/cols);
+  const cols=shotCount>=6?2:1;
+  const rows=Math.ceil(shots.length/cols);
   const fw=cols===2?Math.floor(FW/2)-gap/2:FW;
   const fh=Math.round(fw*rH/rW);
   const sw=cols*fw+(cols-1)*gap+pad*2;
@@ -668,7 +680,8 @@ function buildStrip(){
   sc.style.height='auto';
   const ctx=sc.getContext('2d');
 
-  drawStripBg(ctx,sw,sh);
+  // Strip background white
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,sw,sh);
 
   const rb=parseFloat(document.getElementById('rBr').value);
   const rbl=parseFloat(document.getElementById('rBl').value);
@@ -677,67 +690,117 @@ function buildStrip(){
   shots.forEach((shot,i)=>{
     const col=i%cols, row=Math.floor(i/cols);
     const x=pad+col*(fw+gap), y=pad+row*(fh+gap);
+    const frameId=perPhotoFrames[i]||'none';
+
+    // Draw frame bg
+    drawOneFrameBg(ctx,x,y,fw,fh,frameId);
+
+    // Draw photo
     ctx.save();
-    ctx.beginPath(); ctx.roundRect(x,y,fw,fh,6); ctx.clip();
+    ctx.beginPath(); ctx.roundRect(x,y,fw,fh,5); ctx.clip();
     let f=`brightness(${rb})`;
     if(rf!=='none') f+=' '+rf;
     if(rbl>0) f+=` blur(${rbl}px)`;
     ctx.filter=f;
     ctx.drawImage(shot,x,y,fw,fh);
     ctx.restore();
+    ctx.filter='none';
+
+    // Draw frame decoration on top
+    drawOneFrameTop(ctx,x,y,fw,fh,frameId);
   });
 
-  // Date
+  // Date stamp
   const now=new Date();
   const ds=`${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
-  ctx.fillStyle=(currentFrame==='black'||currentFrame==='film')?'#fff':'#c77dff';
+  ctx.fillStyle='#c77dff';
   ctx.font='700 11px "Noto Sans KR",sans-serif';
   ctx.textAlign='center';
-  ctx.fillText('✨ '+ds+' ✨', sw/2, sh-13);
-
+  ctx.fillText('✨ '+ds+' ✨',sw/2,sh-13);
   resizeOC();
+}
+
+function drawOneFrameBg(ctx,x,y,w,h,frameId){
+  const borderMap={
+    none:null, white:'#eee', black:'#111', pink:'#ffb3d0',
+    polaroid:'#e5e5e5', film:'#000', star:'#ffd166', flower:'#ff9ec4', rainbow:null
+  };
+  const b=borderMap[frameId];
+  if(b){
+    ctx.strokeStyle=b; ctx.lineWidth=6;
+    ctx.strokeRect(x+3,y+3,w-6,h-6);
+  }
+  if(frameId==='film'){
+    ctx.fillStyle='rgba(0,0,0,0.55)';
+    ctx.fillRect(x,y,8,h); ctx.fillRect(x+w-8,y,8,h);
+    ctx.fillStyle='#fff';
+    for(let j=0;j<6;j++){
+      ctx.fillRect(x+1,y+8+j*(h-16)/5,6,8);
+      ctx.fillRect(x+w-7,y+8+j*(h-16)/5,6,8);
+    }
+  }
+}
+function drawOneFrameTop(ctx,x,y,w,h,frameId){
+  if(frameId==='rainbow'){
+    const cols=['#ff6b9d','#ffd166','#06d6a0','#4facfe','#c77dff'];
+    cols.forEach((c,i)=>{
+      ctx.fillStyle=c;
+      ctx.fillRect(x+i*(w/5),y,w/5,5);
+      ctx.fillRect(x+i*(w/5),y+h-5,w/5,5);
+    });
+  }
+  if(frameId==='star'){
+    ctx.font='12px serif'; ctx.textAlign='left';
+    for(let px=x+2;px<x+w-10;px+=22){ctx.fillText('⭐',px,y+13);ctx.fillText('⭐',px,y+h-2);}
+  }
+  if(frameId==='flower'){
+    ctx.font='11px serif'; ctx.textAlign='left';
+    for(let px=x+2;px<x+w-10;px+=20){ctx.fillText('🌸',px,y+12);ctx.fillText('🌸',px,y+h-2);}
+  }
+  if(frameId==='polaroid'){
+    ctx.fillStyle='rgba(255,255,255,0.1)';
+    ctx.fillRect(x,y+h-20,w,20);
+  }
 }
 
 function redrawStrip(){if(shots.length>0)buildStrip();}
 
-function drawStripBg(ctx,w,h){
-  const cfg={
-    none:{f:'#fff',b:null}, white:{f:'#f9f9f9',b:'#ddd'},
-    black:{f:'#111',b:'#000'}, pink:{f:'#fff0f6',b:'#ffb3d0'},
-    polaroid:{f:'#fafafa',b:'#e5e5e5'}, film:{f:'#0f0f0f',b:'#000'},
-    star:{f:'#fffde7',b:'#ffd166'}, flower:{f:'#fff0f6',b:'#ff9ec4'},
-    rainbow:{f:'#fff',b:null},
-  };
-  const c=cfg[currentFrame]||cfg.none;
-  ctx.fillStyle=c.f; ctx.fillRect(0,0,w,h);
-  if(c.b){ctx.strokeStyle=c.b;ctx.lineWidth=7;ctx.strokeRect(3.5,3.5,w-7,h-7);}
-  if(currentFrame==='rainbow'){
-    ['#ff6b9d','#ffd166','#06d6a0','#4facfe','#c77dff'].forEach((col,i)=>{
-      ctx.fillStyle=col;
-      ctx.fillRect(i*(w/5),0,w/5,6);
-      ctx.fillRect(i*(w/5),h-6,w/5,6);
+// ══════════════════════════════════════════
+// PER-PHOTO FRAME UI
+// ══════════════════════════════════════════
+function buildPhotoFrameUI(){
+  const wrap=document.getElementById('photoFrameWrap');
+  wrap.innerHTML='';
+  shots.forEach((_,i)=>{
+    const row=document.createElement('div');
+    row.className='pf-row';
+    const lbl=document.createElement('div');
+    lbl.className='pf-label';
+    lbl.textContent=`📷${i+1}`;
+    row.appendChild(lbl);
+    const chips=document.createElement('div');
+    chips.className='pf-chips';
+    PFRAMES.forEach(f=>{
+      const c=document.createElement('button');
+      c.className='pf-chip'+(perPhotoFrames[i]===f.id?' active':'');
+      c.textContent=f.i;
+      c.title=f.id;
+      c.onclick=()=>{
+        perPhotoFrames[i]=f.id;
+        chips.querySelectorAll('.pf-chip').forEach(x=>x.classList.remove('active'));
+        c.classList.add('active');
+        redrawStrip();
+      };
+      chips.appendChild(c);
     });
-  }
-  if(currentFrame==='film'){
-    for(let i=0;i<10;i++){
-      ctx.fillStyle='#2a2a2a';
-      ctx.beginPath();ctx.roundRect(2,8+i*(h-16)/9,6,8,2);ctx.fill();
-      ctx.beginPath();ctx.roundRect(w-8,8+i*(h-16)/9,6,8,2);ctx.fill();
-    }
-  }
-  if(currentFrame==='star'){
-    ctx.font='16px serif';ctx.textAlign='left';
-    for(let x=8;x<w;x+=30){ctx.fillText('⭐',x,17);ctx.fillText('⭐',x,h-3);}
-  }
-  if(currentFrame==='flower'){
-    ctx.font='14px serif';ctx.textAlign='left';
-    for(let x=6;x<w;x+=26){ctx.fillText('🌸',x,15);ctx.fillText('🌸',x,h-3);}
-  }
+    row.appendChild(chips);
+    wrap.appendChild(row);
+  });
 }
 
-// ──────────────────────────────────────────────
-// OVERLAY CANVAS
-// ──────────────────────────────────────────────
+// ══════════════════════════════════════════
+// OVERLAY (stickers + texts + handwriting stamps)
+// ══════════════════════════════════════════
 function initOverlay(){
   const oc=document.getElementById('stickerOverlay');
   oc.addEventListener('mousedown',ocDown);
@@ -751,7 +814,6 @@ function resizeOC(){
   const sc=document.getElementById('stripCanvas');
   const oc=document.getElementById('stickerOverlay');
   oc.width=sc.width; oc.height=sc.height;
-  // rAF ensures layout is complete before reading getBoundingClientRect
   requestAnimationFrame(()=>{
     const r=sc.getBoundingClientRect();
     oc.style.width=r.width+'px'; oc.style.height=r.height+'px';
@@ -767,25 +829,27 @@ function renderOC(){
       ctx.font=`${it.fs}px serif`;
       ctx.textAlign='center'; ctx.textBaseline='middle';
       ctx.fillText(it.e,it.x,it.y);
-    } else {
+    } else if(it.type==='text'){
       ctx.font=`700 ${it.fs}px "Noto Sans KR",sans-serif`;
       ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.strokeStyle='rgba(0,0,0,0.2)'; ctx.lineWidth=3;
+      ctx.strokeStyle='rgba(0,0,0,0.18)'; ctx.lineWidth=3;
       ctx.strokeText(it.t,it.x,it.y);
       ctx.fillStyle=it.c; ctx.fillText(it.t,it.x,it.y);
+    } else if(it.type==='drawing'){
+      ctx.drawImage(it.img,it.x,it.y,it.w,it.h);
     }
   });
 }
 function ocPos(e){
   const oc=document.getElementById('stickerOverlay');
   const r=oc.getBoundingClientRect();
-  const sx=oc.width/r.width, sy=oc.height/r.height;
-  return{x:(e.clientX-r.left)*sx, y:(e.clientY-r.top)*sy};
+  return{x:(e.clientX-r.left)*oc.width/r.width, y:(e.clientY-r.top)*oc.height/r.height};
 }
 function ocTPos(e){const t=e.touches[0];return ocPos({clientX:t.clientX,clientY:t.clientY});}
 function hitTest(p){
   for(let i=overlayItems.length-1;i>=0;i--){
-    const it=overlayItems[i], r=it.fs*0.8;
+    const it=overlayItems[i];
+    const r=(it.fs||40)*0.8;
     if(Math.abs(p.x-it.x)<r&&Math.abs(p.y-it.y)<r) return i;
   }
   return -1;
@@ -795,57 +859,161 @@ function ocTouchStart(e){const p=ocTPos(e),idx=hitTest(p);if(idx>=0){dragging=id
 function ocMove(e){if(dragging===null)return;const p=ocPos(e);overlayItems[dragging].x=p.x-dragOX;overlayItems[dragging].y=p.y-dragOY;renderOC();}
 function ocTouchMove(e){if(dragging===null)return;const p=ocTPos(e);overlayItems[dragging].x=p.x-dragOX;overlayItems[dragging].y=p.y-dragOY;renderOC();e.preventDefault();}
 
-function addSticker(e){
+function addSticker(em){
   const oc=document.getElementById('stickerOverlay');
   if(!oc.width) return;
-  overlayItems.push({type:'sticker',e,x:oc.width*(0.2+Math.random()*0.6),y:oc.height*(0.15+Math.random()*0.7),fs:38+Math.random()*18});
+  overlayItems.push({type:'sticker',e:em,x:oc.width*(0.2+Math.random()*0.6),y:oc.height*(0.15+Math.random()*0.7),fs:38+Math.random()*18});
   renderOC();
 }
 function addText(){
   const val=document.getElementById('txtIn').value.trim();
   if(!val) return;
   const oc=document.getElementById('stickerOverlay');
-  if(!oc.width) return;
+  if(!oc.width){toast('먼저 사진을 찍어주세요!');return;}
   overlayItems.push({type:'text',t:val,x:oc.width/2,y:oc.height*(0.15+Math.random()*0.7),fs:22,c:txtColor});
   document.getElementById('txtIn').value='';
   renderOC();
-  toast('✏️ 추가됨! 드래그로 위치 이동하세요');
+  toast('✏️ 추가됨! 드래그로 이동하세요');
 }
-function clearOverlay(){overlayItems=[];renderOC();}
+function clearOverlayItems(){overlayItems=[];renderOC();}
 
-// ──────────────────────────────────────────────
-// SAVE
-// ──────────────────────────────────────────────
+// ══════════════════════════════════════════
+// HANDWRITING
+// ══════════════════════════════════════════
+function initDrawCanvas(){
+  const dc=document.getElementById('drawCanvas');
+  // set width after layout
+  requestAnimationFrame(()=>{
+    dc.width=dc.offsetWidth||260; dc.height=100;
+  });
+  dc.addEventListener('mousedown',dwStart);
+  dc.addEventListener('mousemove',dwMove);
+  dc.addEventListener('mouseup',dwEnd);
+  dc.addEventListener('touchstart',dwTStart,{passive:false});
+  dc.addEventListener('touchmove',dwTMove,{passive:false});
+  dc.addEventListener('touchend',dwEnd);
+}
+function dwCtx(){return document.getElementById('drawCanvas').getContext('2d');}
+function dwStart(e){
+  isDrawing=true;
+  const r=e.target.getBoundingClientRect();
+  lastDX=e.clientX-r.left; lastDY=e.clientY-r.top;
+}
+function dwMove(e){
+  if(!isDrawing) return;
+  const r=e.target.getBoundingClientRect();
+  const x=e.clientX-r.left, y=e.clientY-r.top;
+  const ctx=dwCtx();
+  ctx.strokeStyle=drawColor; ctx.lineWidth=drawSize;
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  ctx.beginPath(); ctx.moveTo(lastDX,lastDY); ctx.lineTo(x,y); ctx.stroke();
+  lastDX=x; lastDY=y;
+}
+function dwEnd(){isDrawing=false;}
+function dwTStart(e){
+  e.preventDefault();
+  const t=e.touches[0];
+  const r=e.target.getBoundingClientRect();
+  isDrawing=true; lastDX=t.clientX-r.left; lastDY=t.clientY-r.top;
+}
+function dwTMove(e){
+  e.preventDefault(); if(!isDrawing) return;
+  const t=e.touches[0];
+  const r=e.target.getBoundingClientRect();
+  const x=t.clientX-r.left, y=t.clientY-r.top;
+  const ctx=dwCtx();
+  ctx.strokeStyle=drawColor; ctx.lineWidth=drawSize;
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  ctx.beginPath(); ctx.moveTo(lastDX,lastDY); ctx.lineTo(x,y); ctx.stroke();
+  lastDX=x; lastDY=y;
+}
+function clearDrawCanvas(){
+  const dc=document.getElementById('drawCanvas');
+  dwCtx().clearRect(0,0,dc.width,dc.height);
+}
+function stampDrawing(){
+  const dc=document.getElementById('drawCanvas');
+  const oc=document.getElementById('stickerOverlay');
+  if(!oc.width){toast('먼저 사진을 찍어주세요!');return;}
+  // Convert drawCanvas to image and place on overlay
+  const img=new Image();
+  img.onload=()=>{
+    const scale=oc.width/dc.offsetWidth;
+    overlayItems.push({
+      type:'drawing',img,
+      x:oc.width*0.1, y:oc.height*0.1,
+      w:dc.width*scale*0.8, h:dc.height*scale*0.8,
+      fs:40
+    });
+    renderOC();
+    clearDrawCanvas();
+    toast('✍️ 손글씨 붙였어요! 드래그로 이동하세요');
+  };
+  img.src=dc.toDataURL();
+}
+function setDrawColor(c,el){
+  drawColor=c;
+  document.querySelectorAll('.draw-color').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active');
+}
+function setDrawSize(s,el){
+  drawSize=s;
+  document.querySelectorAll('.dsz').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ══════════════════════════════════════════
+// SAVE & CLEAR RESULT
+// ══════════════════════════════════════════
 function savePhoto(){
   const sc=document.getElementById('stripCanvas');
   const oc=document.getElementById('stickerOverlay');
   const m=document.createElement('canvas');
   m.width=sc.width; m.height=sc.height;
   const ctx=m.getContext('2d');
-  ctx.drawImage(sc,0,0);
-  ctx.drawImage(oc,0,0);
+  ctx.drawImage(sc,0,0); ctx.drawImage(oc,0,0);
   const a=document.createElement('a');
   a.href=m.toDataURL('image/jpeg',0.95);
   a.download=`인생네컷_${Date.now()}.jpg`;
   document.body.appendChild(a);a.click();document.body.removeChild(a);
-  toast('💾 저장됐어요! 사진앱에서 확인해보세요 📱');
+  toast('💾 저장됐어요! 📱');
+}
+function clearResult(){
+  if(!confirm('결과를 지울까요? 촬영한 사진도 모두 삭제돼요.')) return;
+  shots=[]; perPhotoFrames=[]; overlayItems=[];
+  resultFilter='none';
+  document.getElementById('rBr').value=1;
+  document.getElementById('rBl').value=0;
+  document.querySelectorAll('#resFilterChips .fchip').forEach((b,i)=>{
+    b.classList.toggle('active',i===0);
+  });
+  const sc=document.getElementById('stripCanvas');
+  const oc=document.getElementById('stickerOverlay');
+  sc.getContext('2d').clearRect(0,0,sc.width,sc.height);
+  oc.getContext('2d').clearRect(0,0,oc.width,oc.height);
+  document.getElementById('photoFrameWrap').innerHTML='';
+  buildDotRow();
+  switchTab('cam');
+  toast('🗑 결과가 삭제됐어요');
 }
 
-// ──────────────────────────────────────────────
+// ══════════════════════════════════════════
 // GRID BUILDERS
-// ──────────────────────────────────────────────
+// ══════════════════════════════════════════
 function buildColorGrid(){
   const g=document.getElementById('colorGrid');
-  COLORS.forEach(c=>{
+  // "없음" = camera only
+  const none=document.createElement('div');
+  none.className='sw active'; none.style.background='#1a1a2e';
+  none.textContent='📷'; none.title='카메라만';
+  none.onclick=()=>{setBg('none');setActiveSw(none);};
+  g.appendChild(none);
+  // solid colors
+  ['#ff6b9d','#c77dff','#7bb7fa','#06d6a0','#ffd166','#ef476f',
+   '#f8edeb','#e0fbfc','#fff9c4','#fce4ec','#1a1a2e','#2d6a4f'].forEach(c=>{
     const sw=document.createElement('div');
-    sw.className='sw'+(c==='camera'?' active':'');
-    if(c==='camera'){sw.style.background='#1a1a2e';sw.textContent='📷';sw.style.fontSize='1rem';}
-    else sw.style.background=c;
-    sw.onclick=()=>{
-      if(c==='camera') setBg('camera');
-      else setBg('color',c);
-      setActiveSw(sw);
-    };
+    sw.className='sw'; sw.style.background=c;
+    sw.onclick=()=>{setBg('color',c);setActiveSw(sw);};
     g.appendChild(sw);
   });
 }
@@ -863,7 +1031,7 @@ function buildPatGrid(){
   PATS.forEach(p=>{
     const sw=document.createElement('div');
     sw.className='sw'; sw.style.background=p.b;
-    sw.innerHTML=`<span style="font-size:0.62rem;color:#888;">${p.l}</span>`;
+    sw.innerHTML=`<span style="font-size:0.6rem;color:#888;">${p.l}</span>`;
     sw.onclick=()=>{setBg('pat',p);setActiveSw(sw);};
     g.appendChild(sw);
   });
@@ -883,21 +1051,6 @@ function buildFilterChips(id,isRes){
     g.appendChild(b);
   });
 }
-function buildFrameGrid(){
-  const g=document.getElementById('frameGrid');
-  FRAMES.forEach(f=>{
-    const b=document.createElement('button');
-    b.className='fbtn'+(f.id==='none'?' active':'');
-    b.innerHTML=`<span class="ficon">${f.i}</span>${f.l}`;
-    b.onclick=()=>{
-      currentFrame=f.id;
-      document.querySelectorAll('.fbtn').forEach(x=>x.classList.remove('active'));
-      b.classList.add('active');
-      redrawStrip();
-    };
-    g.appendChild(b);
-  });
-}
 function buildStickerGrid(){
   const g=document.getElementById('stickerGrid');
   STICKERS.forEach(e=>{
@@ -913,7 +1066,7 @@ function buildTxtColors(){
     const d=document.createElement('div');
     d.className='cdot'+(c===txtColor?' active':'');
     d.style.background=c;
-    if(c==='#ffffff') d.style.border='2px solid #ddd';
+    if(c==='#ffffff') d.style.border='1.5px solid #ddd';
     d.onclick=()=>{txtColor=c;r.querySelectorAll('.cdot').forEach(x=>x.classList.remove('active'));d.classList.add('active');};
     r.appendChild(d);
   });
@@ -928,11 +1081,11 @@ function buildDotRow(){
   updateLabel();
 }
 
-// ──────────────────────────────────────────────
+// ══════════════════════════════════════════
 // SETTERS
-// ──────────────────────────────────────────────
+// ══════════════════════════════════════════
 function setShotCount(n,btn){
-  shotCount=n; shots=[];
+  shotCount=n; shots=[]; perPhotoFrames=[];
   document.querySelectorAll('.sshot').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active'); buildDotRow();
 }
@@ -948,25 +1101,6 @@ function setTimer(t,btn){
 }
 function setBg(type,val){
   bgType=type; bgVal=val||null;
-  const video=document.getElementById('videoEl');
-  const va=document.getElementById('viewArea');
-  if(type==='camera'){
-    video.style.display='block';
-    video.style.visibility='visible';
-    va.style.background='#111';
-    bgImg=null;
-    // 카메라 스트림 재연결
-    if(stream && video.srcObject!==stream){
-      video.srcObject=stream;
-      video.play();
-    }
-  } else {
-    video.style.display='none';
-    if(type==='color') va.style.background=val;
-    else if(type==='grad') va.style.background=val;
-    else if(type==='pat') va.style.background=val.b;
-    else if(type==='image'){va.style.background='#000';bgImg=val;}
-  }
 }
 function setActiveSw(el){
   document.querySelectorAll('.sw').forEach(s=>s.classList.remove('active'));
@@ -985,7 +1119,7 @@ function applyVF(){
 function loadBgImg(inp){
   const file=inp.files[0]; if(!file) return;
   const img=new Image();
-  img.onload=()=>{setBg('image',img);toast('🖼 배경 이미지 설정됨!');};
+  img.onload=()=>{bgImgObj=img;setBg('image');toast('🖼 배경 이미지 설정됨!');};
   img.src=URL.createObjectURL(file);
 }
 function switchBgTab(t,btn){
@@ -994,11 +1128,15 @@ function switchBgTab(t,btn){
   document.getElementById(m[t]).classList.add('active');
   document.querySelectorAll('.bg-tab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
+  if(t==='c') setBg('none'); // 없음 탭으로 오면 초기화
 }
 function updateAspect(){
   const va=document.getElementById('viewArea');
+  const bc=document.getElementById('bgCanvas');
   const w=va.offsetWidth;
-  va.style.height=Math.min(Math.round(w*rH/rW),Math.round(window.innerHeight*.52))+'px';
+  const h=Math.min(Math.round(w*rH/rW),Math.round(window.innerHeight*.52));
+  va.style.height=h+'px';
+  bc.width=w; bc.height=h;
 }
 function updateDots(){
   for(let i=0;i<shotCount;i++){
@@ -1009,11 +1147,11 @@ function updateDots(){
   }
 }
 function updateLabel(){document.getElementById('shotLabel').textContent=`${shots.length} / ${shotCount}`;}
-function resetShots(){shots=[];overlayItems=[];buildDotRow();switchTab('cam');}
+function resetShots(){shots=[];perPhotoFrames=[];overlayItems=[];buildDotRow();switchTab('cam');}
 
-// ──────────────────────────────────────────────
+// ══════════════════════════════════════════
 // HELPERS
-// ──────────────────────────────────────────────
+// ══════════════════════════════════════════
 function drawGrad(ctx,css,w,h){
   const cs=css.match(/#[0-9a-fA-F]{3,8}/g)||['#c77dff','#ff6b9d'];
   const g=ctx.createLinearGradient(0,0,w,h);
@@ -1021,19 +1159,18 @@ function drawGrad(ctx,css,w,h){
   ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
 }
 function drawPat(ctx,p,w,h){
-  ctx.save(); ctx.globalAlpha=0.28;
+  ctx.save(); ctx.globalAlpha=0.3;
   const m={heart:'❤️',star:'⭐',dot:'⬤',check:'✓',flower:'🌸',cloud:'☁️',rainbow:'🌈',sky:'✈️'};
   const em=m[p]||'✨'; const sz=24;
   ctx.font=`${sz}px serif`; ctx.textAlign='center';
-  for(let y=sz;y<h+sz;y+=sz*1.8){
+  for(let y=sz;y<h+sz;y+=sz*1.8)
     for(let x=(Math.floor(y/sz)%2===0?0:sz);x<w+sz;x+=sz*2) ctx.fillText(em,x,y);
-  }
   ctx.restore();
 }
 
-// ──────────────────────────────────────────────
+// ══════════════════════════════════════════
 // TAB SWITCH
-// ──────────────────────────────────────────────
+// ══════════════════════════════════════════
 function switchTab(t){
   document.getElementById('tCam').classList.toggle('active',t==='cam');
   document.getElementById('tRes').classList.toggle('active',t==='res');
@@ -1042,19 +1179,20 @@ function switchTab(t){
   if(t==='res'){
     if(shots.length===0){switchTab('cam');toast('먼저 사진을 찍어주세요 📸');return;}
     buildStrip();
+    buildPhotoFrameUI();
     setTimeout(()=>requestAnimationFrame(resizeOC),150);
+    // resize draw canvas
+    requestAnimationFrame(()=>{
+      const dc=document.getElementById('drawCanvas');
+      if(dc.offsetWidth>0){dc.width=dc.offsetWidth; dc.height=100;}
+    });
   }
 }
-
-// ──────────────────────────────────────────────
-// TOAST
-// ──────────────────────────────────────────────
 function toast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg; t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2500);
 }
-
 window.addEventListener('resize',updateAspect);
 init();
 </script>
