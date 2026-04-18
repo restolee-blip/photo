@@ -413,36 +413,69 @@ function buildStrip(){
   ctx.fillText('✨ '+ds+' ✨',sw/2,sh-13);
   buildFrameGrid();resizeOC();
 }
-function getFrameInset(fid){return({none:0,white:10,black:10,pink:10,polaroid:8,film:12,star:6,flower:6,rainbow:6})[fid]||0;}
+function getFrameInset(fid){
+  // only film needs real inset for holes; others draw border on top
+  return fid==='film'?14:0;
+}
+
 function drawSingleFrameBg(ctx,x,y,w,h,fid){
-  const cfg={
-    none:{f:null,b:null},
-    white:{f:'#f0f0f0',b:'#ccc'},
-    black:{f:'#111',b:'#000'},
-    pink:{f:'#ffe0f0',b:'#ff6b9d'},
-    polaroid:{f:'#f8f8f8',b:'#bbb'},
-    film:{f:'#181818',b:'#000'},
-    star:{f:'#fff9d6',b:'#f5c400'},
-    flower:{f:'#ffe8f4',b:'#ff6baa'},
-    rainbow:{f:'#fff',b:null},
+  // just fill bg color behind photo
+  const bgMap={
+    none:null, white:'#f0f0f0', black:'#111', pink:'#ffd6e8',
+    polaroid:'#f5f5f5', film:'#181818', star:'#fff8cc',
+    flower:'#ffe0f0', rainbow:'#fff'
   };
-  const c=cfg[fid]||cfg.none;
-  if(c.f){ctx.fillStyle=c.f;ctx.fillRect(x,y,w,h);}
-  if(c.b){ctx.strokeStyle=c.b;ctx.lineWidth=8;ctx.strokeRect(x+4,y+4,w-8,h-8);}
+  const bg=bgMap[fid];
+  if(bg){ctx.fillStyle=bg;ctx.fillRect(x,y,w,h);}
   if(fid==='film'){
-    for(let i=0;i<7;i++){
-      ctx.fillStyle='#333';
-      ctx.beginPath();ctx.roundRect(x+2,y+10+i*(h-20)/6,6,9,2);ctx.fill();
-      ctx.beginPath();ctx.roundRect(x+w-8,y+10+i*(h-20)/6,6,9,2);ctx.fill();
+    ctx.fillStyle='#2a2a2a';
+    for(let i=0;i<8;i++){
+      const hy=y+10+i*(h-20)/7;
+      ctx.beginPath();ctx.roundRect(x+2,hy,8,11,2);ctx.fill();
+      ctx.beginPath();ctx.roundRect(x+w-10,hy,8,11,2);ctx.fill();
     }
   }
 }
-}
+
 function drawSingleFrameOverlay(ctx,x,y,w,h,fid){
-  if(fid==='rainbow'){['#ff6b9d','#ffd166','#06d6a0','#4facfe','#c77dff'].forEach((col,i)=>{ctx.fillStyle=col;ctx.fillRect(x+i*(w/5),y,w/5,6);ctx.fillRect(x+i*(w/5),y+h-6,w/5,6);});}
-  if(fid==='star'){ctx.font='13px serif';ctx.textAlign='left';for(let px=x+2;px<x+w-10;px+=20){ctx.fillText('⭐',px,y+14);ctx.fillText('⭐',px,y+h-1);}}
-  if(fid==='flower'){ctx.font='13px serif';ctx.textAlign='left';for(let px=x+2;px<x+w-10;px+=18){ctx.fillText('🌸',px,y+14);ctx.fillText('🌸',px,y+h-1);}}
-  if(fid==='polaroid'){ctx.fillStyle='rgba(255,255,255,0.92)';ctx.fillRect(x,y+h-24,w,24);}
+  if(fid==='none') return;
+  // draw frame border ON TOP of the photo
+  const borderMap={
+    white:{color:'#e0e0e0',lw:10},
+    black:{color:'#111',lw:10},
+    pink:{color:'#ff6b9d',lw:10},
+    polaroid:{color:'#e0e0e0',lw:8},
+    film:{color:'#000',lw:4},
+    star:{color:'#f5c400',lw:10},
+    flower:{color:'#ff6baa',lw:10},
+    rainbow:{color:null,lw:0},
+  };
+  const b=borderMap[fid];
+  if(b&&b.color){
+    ctx.strokeStyle=b.color;
+    ctx.lineWidth=b.lw;
+    ctx.strokeRect(x+b.lw/2,y+b.lw/2,w-b.lw,h-b.lw);
+  }
+  if(fid==='rainbow'){
+    ['#ff6b9d','#ffd166','#06d6a0','#4facfe','#c77dff'].forEach((col,i)=>{
+      ctx.fillStyle=col;
+      ctx.fillRect(x+i*(w/5),y,w/5,8);
+      ctx.fillRect(x+i*(w/5),y+h-8,w/5,8);
+    });
+  }
+  if(fid==='star'){
+    ctx.font='13px serif';ctx.textAlign='left';
+    for(let px=x+12;px<x+w-16;px+=22){ctx.fillText('⭐',px,y+16);ctx.fillText('⭐',px,y+h-3);}
+  }
+  if(fid==='flower'){
+    ctx.font='13px serif';ctx.textAlign='left';
+    for(let px=x+12;px<x+w-16;px+=20){ctx.fillText('🌸',px,y+16);ctx.fillText('🌸',px,y+h-3);}
+  }
+  if(fid==='polaroid'){
+    // white strip at bottom like a real polaroid
+    ctx.fillStyle='#fff';
+    ctx.fillRect(x,y+h-28,w,28);
+  }
 }
 function redrawStrip(){if(shots.length>0)buildStrip();}
 
@@ -463,9 +496,13 @@ function buildFrameGrid(){
 
 function initOverlay(){
   const oc=document.getElementById('stickerOverlay');
-  oc.addEventListener('mousedown',ocDown);oc.addEventListener('touchstart',ocTS,{passive:false});
-  document.addEventListener('mousemove',ocMove);document.addEventListener('touchmove',ocTM,{passive:false});
-  document.addEventListener('mouseup',()=>dragging=null);document.addEventListener('touchend',()=>dragging=null);
+  oc.addEventListener('mousedown',ocDown);
+  oc.addEventListener('touchstart',ocTS,{passive:false});
+  // mousemove/touchmove on document so drag works outside canvas bounds
+  document.addEventListener('mousemove',ocMove);
+  document.addEventListener('touchmove',ocTM,{passive:false});
+  document.addEventListener('mouseup',()=>dragging=null);
+  document.addEventListener('touchend',()=>dragging=null);
 }
 function resizeOC(){
   const sc=document.getElementById('stripCanvas'),oc=document.getElementById('stickerOverlay');
@@ -487,37 +524,49 @@ function hitTest(p){
   for(let i=overlayItems.length-1;i>=0;i--){
     const it=overlayItems[i];
     if(it.type==='hw'){
-      // hw uses top-left x,y
-      if(p.x>=it.x&&p.x<=it.x+it.w&&p.y>=it.y&&p.y<=it.y+it.h) return i;
+      // hw: top-left based, check bounding box
+      if(p.x>=it.x && p.x<=it.x+it.w && p.y>=it.y && p.y<=it.y+it.h) return i;
     } else {
-      const r=(it.fs||40)*0.9;
-      if(Math.abs(p.x-it.x)<r&&Math.abs(p.y-it.y)<r) return i;
+      // sticker/text: center based
+      const r=Math.max((it.fs||40)*1.0, 30);
+      if(Math.abs(p.x-it.x)<r && Math.abs(p.y-it.y)<r) return i;
     }
   }
   return -1;
 }
 function ocDown(e){
-  const p=ocPos(e),idx=hitTest(p);
+  const p=ocPos(e), idx=hitTest(p);
   if(idx>=0){
     dragging=idx;
-    const it=overlayItems[idx];
-    dragOX=p.x-it.x;
-    dragOY=p.y-it.y;
+    dragOX=p.x-overlayItems[idx].x;
+    dragOY=p.y-overlayItems[idx].y;
     e.preventDefault();
   }
 }
 function ocTS(e){
-  const p=ocTP(e),idx=hitTest(p);
+  const p=ocTP(e), idx=hitTest(p);
   if(idx>=0){
     dragging=idx;
-    const it=overlayItems[idx];
-    dragOX=p.x-it.x;
-    dragOY=p.y-it.y;
+    dragOX=p.x-overlayItems[idx].x;
+    dragOY=p.y-overlayItems[idx].y;
     e.preventDefault();
   }
 }
-function ocMove(e){if(dragging===null)return;const p=ocPos(e);overlayItems[dragging].x=p.x-dragOX;overlayItems[dragging].y=p.y-dragOY;renderOC();}
-function ocTM(e){if(dragging===null)return;const p=ocTP(e);overlayItems[dragging].x=p.x-dragOX;overlayItems[dragging].y=p.y-dragOY;renderOC();e.preventDefault();}
+function ocMove(e){
+  if(dragging===null) return;
+  const p=ocPos(e);
+  overlayItems[dragging].x=p.x-dragOX;
+  overlayItems[dragging].y=p.y-dragOY;
+  renderOC();
+}
+function ocTM(e){
+  if(dragging===null) return;
+  e.preventDefault();
+  const p=ocTP(e);
+  overlayItems[dragging].x=p.x-dragOX;
+  overlayItems[dragging].y=p.y-dragOY;
+  renderOC();
+}
 function addSticker(e){const oc=document.getElementById('stickerOverlay');if(!oc.width)return;overlayItems.push({type:'sticker',e,x:oc.width*(0.2+Math.random()*0.6),y:oc.height*(0.15+Math.random()*0.7),fs:38+Math.random()*18});renderOC();}
 function addText(){const val=document.getElementById('txtIn').value.trim();if(!val)return;const oc=document.getElementById('stickerOverlay');if(!oc.width)return;overlayItems.push({type:'text',t:val,x:oc.width/2,y:oc.height*(0.15+Math.random()*0.7),fs:22,c:txtColor});document.getElementById('txtIn').value='';renderOC();toast('✏️ 추가됨! 드래그로 위치 이동');}
 function clearOverlay(){overlayItems=[];renderOC();}
@@ -552,14 +601,42 @@ function hwTS(e){e.preventDefault();const t=e.touches[0];hwStart({clientX:t.clie
 function hwTM(e){e.preventDefault();const t=e.touches[0];hwMove({clientX:t.clientX,clientY:t.clientY});}
 function clearHW(){const hc=document.getElementById('hwCanvas');hc.getContext('2d').clearRect(0,0,hc.width,hc.height);}
 function addHWToStrip(){
-  const hc=document.getElementById('hwCanvas'),oc=document.getElementById('stickerOverlay');
-  if(!oc.width)return;
+  const hc=document.getElementById('hwCanvas');
+  const sc=document.getElementById('stripCanvas');
+  const oc=document.getElementById('stickerOverlay');
+  // use stripCanvas size if overlay not yet sized
+  const canW=oc.width||sc.width||300;
+  const canH=oc.height||sc.height||400;
+  if(!canW||!canH){toast('먼저 사진을 찍어주세요!');return;}
+  const dataUrl=hc.toDataURL();
+  if(dataUrl==='data:,'){toast('손글씨를 먼저 써주세요!');return;}
   const img=new Image();
   img.onload=()=>{
-    overlayItems.push({type:'hw',img,x:oc.width*0.1,y:oc.height*0.1,w:oc.width*0.8,h:oc.width*0.8*(hc.height/hc.width),fs:40});
-    renderOC();clearHW();toast('🖊 손글씨 추가됨! 드래그로 위치 이동');
+    const hw=canW*0.8;
+    const hh=hw*(hc.height/Math.max(hc.width,1));
+    overlayItems.push({
+      type:'hw', img,
+      x: canW*0.1,
+      y: canH*0.1,
+      w: hw,
+      h: hh,
+      fs: 50 // used for hit radius approximation
+    });
+    // make sure overlay is properly sized before rendering
+    if(oc.width!==sc.width||oc.height!==sc.height){
+      oc.width=sc.width; oc.height=sc.height;
+      requestAnimationFrame(()=>{
+        const r=sc.getBoundingClientRect();
+        oc.style.width=r.width+'px'; oc.style.height=r.height+'px';
+        renderOC();
+      });
+    } else {
+      renderOC();
+    }
+    clearHW();
+    toast('🖊 손글씨 추가됨! 드래그로 위치 이동');
   };
-  img.src=hc.toDataURL();
+  img.src=dataUrl;
 }
 function buildHWColors(){
   const row=document.getElementById('hwColors');
