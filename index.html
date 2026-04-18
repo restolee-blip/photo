@@ -283,12 +283,41 @@ async function init(){
 
 async function startCam(){
   try{
-    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:1280},height:{ideal:720}},audio:false});
+    // 크롬/엣지 호환: 제약 단순화, 이벤트 먼저 등록
+    const constraints={
+      video:{width:{ideal:1280},height:{ideal:720},facingMode:{ideal:'user'}},
+      audio:false
+    };
+    stream=await navigator.mediaDevices.getUserMedia(constraints);
     const v=document.getElementById('videoEl');
-    v.srcObject=stream;v.style.transform='scaleX(-1)';
-    v.onloadeddata=()=>{v.play();videoReady=true;setStat('on','🤚 손바닥을 카메라에 보여주세요!');startBgLoop();};
+    // 이벤트 먼저 등록 후 srcObject 설정
+    v.onloadedmetadata=()=>{
+      v.play().catch(()=>{});
+    };
+    v.oncanplay=()=>{
+      videoReady=true;
+      setStat('on','🤚 손바닥을 카메라에 보여주세요!');
+      startBgLoop();
+    };
+    v.srcObject=stream;
+    v.style.transform='scaleX(-1)';
     toast('📷 카메라 연결됨!');
-  }catch(e){setStat('','⚠️ 카메라 권한을 허용해주세요 (HTTPS 필요)');toast('카메라 접근 권한이 필요해요');}
+  }catch(e){
+    // facingMode 없이 재시도
+    try{
+      stream=await navigator.mediaDevices.getUserMedia({video:true,audio:false});
+      const v=document.getElementById('videoEl');
+      v.onloadedmetadata=()=>{v.play().catch(()=>{});};
+      v.oncanplay=()=>{videoReady=true;setStat('on','🤚 손바닥을 카메라에 보여주세요!');startBgLoop();};
+      v.srcObject=stream;
+      v.style.transform='scaleX(-1)';
+      toast('📷 카메라 연결됨!');
+    }catch(e2){
+      setStat('','⚠️ 카메라 권한을 허용해주세요');
+      toast('카메라 접근 권한이 필요해요');
+    }
+  }
+}
 }
 function flipCam(){isMirrored=!isMirrored;document.getElementById('videoEl').style.transform=isMirrored?'scaleX(-1)':'scaleX(1)';}
 function setStat(cls,msg){document.getElementById('sdot').className='sdot'+(cls?' '+cls:'');document.getElementById('stext').textContent=msg;}
