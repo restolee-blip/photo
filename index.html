@@ -263,7 +263,20 @@ const COLORS=['#ff6b9d','#c77dff','#7bb7fa','#06d6a0','#ffd166','#ef476f','#f8ed
 const GRADS=['linear-gradient(135deg,#ff6b9d,#c77dff)','linear-gradient(135deg,#a8edea,#fed6e3)','linear-gradient(135deg,#ffecd2,#fcb69f)','linear-gradient(135deg,#d4fc79,#96e6a1)','linear-gradient(135deg,#667eea,#764ba2)','linear-gradient(135deg,#f093fb,#f5576c)','linear-gradient(135deg,#4facfe,#00f2fe)','linear-gradient(135deg,#43e97b,#38f9d7)','linear-gradient(135deg,#fa709a,#fee140)','linear-gradient(135deg,#1a1a2e,#c77dff)','linear-gradient(135deg,#e0c3fc,#8ec5fc)','linear-gradient(135deg,#ffeaa7,#fd79a8)'];
 const PATS=[{l:'하트',b:'#fff0f6',p:'heart'},{l:'별',b:'#fffde7',p:'star'},{l:'물방울',b:'#e8f5fe',p:'dot'},{l:'체크',b:'#e8f5e9',p:'check'},{l:'꽃',b:'#fce4ec',p:'flower'},{l:'구름',b:'#e3f2fd',p:'cloud'},{l:'무지개',b:'#fff8f0',p:'rainbow'},{l:'하늘',b:'#e8f4fd',p:'sky'}];
 const FILTERS=[{n:'없음',c:'none',l:'원본'},{n:'따뜻',c:'sepia(0.3) saturate(1.2) brightness(1.05)',l:'🌅 따뜻'},{n:'차가운',c:'hue-rotate(190deg) saturate(1.1)',l:'🩵 차가운'},{n:'빈티지',c:'sepia(0.6) contrast(1.1) brightness(0.9)',l:'📷 빈티지'},{n:'흑백',c:'grayscale(1)',l:'⬜ 흑백'},{n:'핑크',c:'hue-rotate(300deg) saturate(1.3)',l:'🌸 핑크'},{n:'드림',c:'saturate(1.5) brightness(1.1) contrast(0.9)',l:'✨ 드림'},{n:'선명',c:'saturate(1.4) contrast(1.15)',l:'💎 선명'}];
-const FRAMES=[{id:'none',l:'없음',i:'⬜'},{id:'white',l:'화이트',i:'🤍'},{id:'black',l:'블랙',i:'🖤'},{id:'pink',l:'핑크',i:'🩷'},{id:'polaroid',l:'폴라로이드',i:'📸'},{id:'film',l:'필름',i:'🎞'},{id:'star',l:'별',i:'⭐'},{id:'flower',l:'꽃',i:'🌸'},{id:'rainbow',l:'무지개',i:'🌈'}];
+const FRAMES=[
+  {id:'none',    l:'없음',      i:'⬜'},
+  {id:'white',   l:'화이트',    i:'🤍'},
+  {id:'black',   l:'블랙',      i:'🖤'},
+  {id:'pink',    l:'핑크',      i:'🩷'},
+  {id:'polaroid',l:'폴라로이드',i:'📸'},
+  {id:'film',    l:'필름',      i:'🎞'},
+  {id:'star',    l:'별',        i:'⭐'},
+  {id:'flower',  l:'꽃',        i:'🌸'},
+  {id:'rainbow', l:'무지개',    i:'🌈'},
+  {id:'mint',    l:'민트',      i:'🩵'},
+  {id:'gold',    l:'골드',      i:'✨'},
+  {id:'heart',   l:'하트',      i:'❤️'},
+];
 const STICKERS=['✨','⭐','🌟','💫','❤️','🩷','🧡','💛','💚','💙','💜','🖤','🌸','🌺','🌻','🍀','🦋','🐝','🍓','🍰','☁️','🌈','🌙','☀️','🎀','🎊','🎉','🎵','💎','👑','🔮','🫧','🪄','🍭','🧁','🌷','🐱','🐶','🐰','🐼','🦊','🐸','🦄','🐙'];
 const TCOLORS=['#ff6b9d','#c77dff','#ffd166','#06d6a0','#4facfe','#1a1a2e','#ffffff','#ef476f'];
 const HWCOLORS=['#ff6b9d','#c77dff','#1a1a2e','#ef476f','#06d6a0','#ffd166'];
@@ -505,7 +518,12 @@ function buildStrip(){
   sc.width=sw;sc.height=sh;sc.style.width=Math.min(sw,320)+'px';sc.style.height='auto';
   const ctx=sc.getContext('2d');
   // strip background color based on frame
-  const stripBgMap={none:'#fff',white:'#f0f0f0',black:'#111',pink:'#ffe0f0',polaroid:'#f8f8f8',film:'#181818',star:'#fff9d6',flower:'#ffe8f4',rainbow:'#fff'};
+  const stripBgMap={
+    none:'#fff', white:'#f0f0f0', black:'#111', pink:'#ffe0f0',
+    polaroid:'#f8f8f8', film:'#f0f0f0', star:'#fff9d6',
+    flower:'#ffe8f4', rainbow:'#fff',
+    mint:'#e0f7f4', gold:'#fdf6e3', heart:'#fff0f4'
+  };
   ctx.fillStyle=stripBgMap[currentFrame]||'#fff';
   ctx.fillRect(0,0,sw,sh);
   const rb=parseFloat(document.getElementById('rBr').value);
@@ -530,41 +548,55 @@ function buildStrip(){
   buildFrameGrid();resizeOC();
 }
 function getFrameInset(fid){
-  // only film needs real inset for holes; others draw border on top
-  return fid==='film'?14:0;
+  return fid==='film'?18:0;
 }
 
 function drawSingleFrameBg(ctx,x,y,w,h,fid){
-  // just fill bg color behind photo
   const bgMap={
     none:null, white:'#f0f0f0', black:'#111', pink:'#ffd6e8',
-    polaroid:'#f5f5f5', film:'#181818', star:'#fff8cc',
-    flower:'#ffe0f0', rainbow:'#fff'
+    polaroid:'#f5f5f5', film:'#fff',
+    star:'#fff8cc', flower:'#ffe0f0', rainbow:'#fff',
+    mint:'#c8f0ea', gold:'#f5e6a0', heart:'#ffd6e0'
   };
   const bg=bgMap[fid];
   if(bg){ctx.fillStyle=bg;ctx.fillRect(x,y,w,h);}
+
   if(fid==='film'){
-    ctx.fillStyle='#2a2a2a';
-    for(let i=0;i<8;i++){
-      const hy=y+10+i*(h-20)/7;
-      ctx.beginPath();ctx.roundRect(x+2,hy,8,11,2);ctx.fill();
-      ctx.beginPath();ctx.roundRect(x+w-10,hy,8,11,2);ctx.fill();
+    // 양쪽 흰색 필름 스트립 영역
+    const stripW=18;
+    ctx.fillStyle='#e8e8e8';
+    ctx.fillRect(x,y,stripW,h);
+    ctx.fillRect(x+w-stripW,y,stripW,h);
+    // 필름 구멍 (검정)
+    ctx.fillStyle='#111';
+    for(let i=0;i<9;i++){
+      const hy=y+8+i*(h-16)/8;
+      ctx.beginPath();ctx.roundRect(x+3,hy,12,9,2);ctx.fill();
+      ctx.beginPath();ctx.roundRect(x+w-15,hy,12,9,2);ctx.fill();
+    }
+    // 필름 구멍 안쪽 밝게
+    ctx.fillStyle='#555';
+    for(let i=0;i<9;i++){
+      const hy=y+8+i*(h-16)/8;
+      ctx.beginPath();ctx.roundRect(x+4,hy+1,10,7,1);ctx.fill();
     }
   }
 }
 
 function drawSingleFrameOverlay(ctx,x,y,w,h,fid){
   if(fid==='none') return;
-  // draw frame border ON TOP of the photo
   const borderMap={
-    white:{color:'#e0e0e0',lw:10},
-    black:{color:'#111',lw:10},
-    pink:{color:'#ff6b9d',lw:10},
-    polaroid:{color:'#e0e0e0',lw:8},
-    film:{color:'#000',lw:4},
-    star:{color:'#f5c400',lw:10},
-    flower:{color:'#ff6baa',lw:10},
-    rainbow:{color:null,lw:0},
+    white:  {color:'#c8c8c8', lw:10},
+    black:  {color:'#111',    lw:10},
+    pink:   {color:'#ff6b9d', lw:10},
+    polaroid:{color:'#d0d0d0',lw:8},
+    film:   {color:null,      lw:0},
+    star:   {color:'#f5c400', lw:10},
+    flower: {color:'#ff6baa', lw:10},
+    rainbow:{color:null,      lw:0},
+    mint:   {color:'#00b09b', lw:10},
+    gold:   {color:'#c8960c', lw:10},
+    heart:  {color:'#ff4d79', lw:10},
   };
   const b=borderMap[fid];
   if(b&&b.color){
@@ -587,10 +619,25 @@ function drawSingleFrameOverlay(ctx,x,y,w,h,fid){
     ctx.font='13px serif';ctx.textAlign='left';
     for(let px=x+12;px<x+w-16;px+=20){ctx.fillText('🌸',px,y+16);ctx.fillText('🌸',px,y+h-3);}
   }
+  if(fid==='heart'){
+    ctx.font='13px serif';ctx.textAlign='left';
+    for(let px=x+12;px<x+w-16;px+=20){ctx.fillText('❤️',px,y+16);ctx.fillText('❤️',px,y+h-3);}
+  }
+  if(fid==='gold'){
+    ctx.font='13px serif';ctx.textAlign='left';
+    for(let px=x+12;px<x+w-16;px+=22){ctx.fillText('✨',px,y+16);ctx.fillText('✨',px,y+h-3);}
+  }
   if(fid==='polaroid'){
-    // white strip at bottom like a real polaroid
     ctx.fillStyle='#fff';
     ctx.fillRect(x,y+h-28,w,28);
+  }
+  if(fid==='film'){
+    // 필름 구멍 오른쪽도 동일하게
+    ctx.fillStyle='#555';
+    for(let i=0;i<9;i++){
+      const hy=y+8+i*(h-16)/8;
+      ctx.beginPath();ctx.roundRect(x+w-14,hy+1,10,7,1);ctx.fill();
+    }
   }
 }
 function redrawStrip(){if(shots.length>0)buildStrip();}
