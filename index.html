@@ -345,13 +345,101 @@ function drawBgCanvas(){
 function updateBgOpacity(){bgOpacity=parseFloat(document.getElementById('bgOpacity').value);document.getElementById('bgOpacityVal').textContent=bgOpacity.toFixed(2);}
 
 function initMediaPipe(){
-  if(typeof Hands==='undefined'){setStat('','손 인식 없음 — 직접 찍기 사용 가능');return;}
-  mpHands=new Hands({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`});
-  mpHands.setOptions({maxNumHands:1,modelComplexity:0,minDetectionConfidence:0.65,minTrackingConfidence:0.5});
-  mpHands.onResults(onHandResults);
+  // MediaPipe 로드 상태 확인 후 재시도
+  let retries=0;
+  function tryInit(){
+    if(typeof Hands!=='undefined' && typeof Camera!=='undefined'){
+      startMediaPipe();
+    } else if(retries<20){
+      retries++;
+      setTimeout(tryInit,500);
+    } else {
+      // MediaPipe 완전 실패 → TF.js 폴백
+      setStat('on','🤚 손바닥을 카메라에 보여주세요!');
+      startTFJSDetection();
+    }
+  }
+  tryInit();
+}
+
+function startMediaPipe(){
+  try{
+    mpHands=new Hands({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`});
+    mpHands.setOptions({maxNumHands:1,modelComplexity:0,minDetectionConfidence:0.6,minTrackingConfidence:0.5});
+    mpHands.onResults(onHandResults);
+    const v=document.getElementById('videoEl');
+    mpCam=new Camera(v,{
+      onFrame:async()=>{
+        if(videoReady&&mpHands){
+          try{ await mpHands.send({image:v}); }catch(e){}
+        }
+      },
+      width:640,height:480
+    });
+    mpCam.start();
+    setStat('on','🤚 손바닥을 카메라에 보여주세요!');
+  }catch(e){
+    startTFJSDetection();
+  }
+}
+
+// TF.js handpose 폴백
+let tfModel=null, tfLoop=null;
+async function startTFJSDetection(){
+  try{
+    // 동적으로 TF.js 로드
+    if(typeof tf==='undefined'){
+      await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js');
+    }
+    if(typeof handPoseDetection==='undefined'){
+      await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection@2.0.1/dist/hand-pose-detection.min.js');
+    }
+    const model=handPoseDetection.SupportedModels.MediaPipeHands;
+    tfModel=await handPoseDetection.createDetector(model,{
+      runtime:'tfjs',
+      modelType:'lite',
+      maxHands:1
+    });
+    setStat('on','🤚 손바닥을 카메라에 보여주세요!');
+    runTFDetection();
+  }catch(e){
+    // TF도 실패 → 직접 찍기만 사용
+    setStat('on','손 인식 불가 — 직접 찍기 버튼을 사용하세요');
+  }
+}
+
+function loadScript(src){
+  return new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src=src; s.onload=res; s.onerror=rej;
+    document.head.appendChild(s);
+  });
+}
+
+async function runTFDetection(){
   const v=document.getElementById('videoEl');
-  mpCam=new Camera(v,{onFrame:async()=>{if(videoReady&&mpHands)await mpHands.send({image:v});},width:640,height:480});
-  mpCam.start();
+  async function detect(){
+    if(!tfModel||!videoReady||cdRunning||isCapturing){
+      tfLoop=requestAnimationFrame(detect); return;
+    }
+    try{
+      const hands=await tfModel.estimateHands(v);
+      if(hands&&hands.length>0){
+        const kp=hands[0].keypoints;
+        // keypoints를 MediaPipe 형식으로 변환
+        const lm=kp.map(k=>({x:k.x/v.videoWidth, y:k.y/v.videoHeight}));
+        if(isPalmOpen(lm)){
+          if(!palmHeld){palmHeld=true;palmHeldStart=Date.now();setStat('ready','✅ 손바닥 감지! 유지하세요...');}
+          else if(Date.now()-palmHeldStart>600){palmHeld=false;startCapture();}
+        }else{palmHeld=false;if(!cdRunning)setStat('on','🤚 손바닥을 활짝 펴주세요!');}
+      }else{
+        palmHeld=false;
+        if(!cdRunning&&!isCapturing)setStat('on','🤚 손바닥을 카메라에 보여주세요!');
+      }
+    }catch(e){}
+    tfLoop=requestAnimationFrame(detect);
+  }
+  detect();
 }
 function isPalmOpen(lm){const tips=[8,12,16,20],mcps=[5,9,13,17];let o=0;for(let i=0;i<4;i++)if(lm[tips[i]].y<lm[mcps[i]].y)o++;return o>=3&&Math.abs(lm[4].x-lm[2].x)>0.05;}
 function onHandResults(res){
