@@ -345,7 +345,8 @@ function drawBgCanvas(){
   const bc=document.getElementById('bgCanvas');
   const w=va.offsetWidth,h=va.offsetHeight;
   if(!w||!h)return;
-  bc.width=w;bc.height=h;
+  // 크기가 바뀔 때만 재설정 (매 프레임 재설정하면 깜빡임)
+  if(bc.width!==w||bc.height!==h){bc.width=w;bc.height=h;}
   const ctx=bc.getContext('2d');
   ctx.clearRect(0,0,w,h);
   if(bgType==='none')return;
@@ -546,10 +547,10 @@ function buildStrip(){
   const ds=`${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
   ctx.fillStyle='#c77dff';ctx.font='700 11px "Noto Sans KR",sans-serif';ctx.textAlign='center';
   ctx.fillText('✨ '+ds+' ✨',sw/2,sh-13);
-  buildFrameGrid();resizeOC();
+  resizeOC();
 }
 function getFrameInset(fid){
-  return fid==='film'?18:0;
+  return fid==='film'?20:0;
 }
 
 function drawSingleFrameBg(ctx,x,y,w,h,fid){
@@ -655,9 +656,11 @@ function initOverlay(){
   const oc=document.getElementById('stickerOverlay');
   oc.addEventListener('mousedown',ocDown);
   oc.addEventListener('touchstart',ocTS,{passive:false});
-  // mousemove/touchmove on document so drag works outside canvas bounds
   document.addEventListener('mousemove',ocMove);
-  document.addEventListener('touchmove',ocTM,{passive:false});
+  // touchmove는 드래그 중일 때만 document에서 잡기
+  document.addEventListener('touchmove',e=>{
+    if(dragging!==null) ocTM(e);
+  },{passive:false});
   document.addEventListener('mouseup',()=>dragging=null);
   document.addEventListener('touchend',()=>dragging=null);
 }
@@ -845,9 +848,16 @@ function resetShots(){shots=[];overlayItems=[];buildDotRow();switchTab('cam');}
 function drawGrad(ctx,css,w,h){const cs=css.match(/#[0-9a-fA-F]{3,8}/g)||['#c77dff','#ff6b9d'];const g=ctx.createLinearGradient(0,0,w,h);cs.forEach((c,i)=>g.addColorStop(i/(cs.length-1),c));ctx.fillStyle=g;ctx.fillRect(0,0,w,h);}
 function drawPat(ctx,p,w,h){ctx.save();ctx.globalAlpha=0.3;const m={heart:'❤️',star:'⭐',dot:'⬤',check:'✓',flower:'🌸',cloud:'☁️',rainbow:'🌈',sky:'✈️'};const em=m[p]||'✨';const sz=24;ctx.font=`${sz}px serif`;ctx.textAlign='center';for(let y=sz;y<h+sz;y+=sz*1.8){for(let x=(Math.floor(y/sz)%2===0?0:sz);x<w+sz;x+=sz*2)ctx.fillText(em,x,y);}ctx.restore();}
 function switchTab(t){
-  document.getElementById('tCam').classList.toggle('active',t==='cam');document.getElementById('tRes').classList.toggle('active',t==='res');
-  document.getElementById('camTab').style.display=t==='cam'?'grid':'none';document.getElementById('resTab').style.display=t==='res'?'grid':'none';
-  if(t==='res'){if(shots.length===0){switchTab('cam');toast('먼저 사진을 찍어주세요 📸');return;}buildStrip();setTimeout(()=>requestAnimationFrame(resizeOC),150);}
+  document.getElementById('tCam').classList.toggle('active',t==='cam');
+  document.getElementById('tRes').classList.toggle('active',t==='res');
+  document.getElementById('camTab').style.display=t==='cam'?'grid':'none';
+  document.getElementById('resTab').style.display=t==='res'?'grid':'none';
+  if(t==='res'){
+    if(shots.length===0){switchTab('cam');toast('먼저 사진을 찍어주세요 📸');return;}
+    buildStrip();
+    buildFrameGrid();
+    setTimeout(()=>requestAnimationFrame(resizeOC),150);
+  }
 }
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 window.addEventListener('resize',updateAspect);
