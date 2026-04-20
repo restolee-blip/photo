@@ -188,9 +188,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;heigh
       </div>
     </div>
     <div class="panel-card">
-      <div class="panel-title">☀️ 밝기 & 흐림</div>
-      <div class="srow"><span class="sl">어둡</span><input type="range" id="brSlider" min="0.3" max="2" step="0.05" value="1" oninput="applyVF()"><span class="sl">밝음</span><span class="sval" id="brVal">1.0</span></div>
-      <div class="srow"><span class="sl">선명</span><input type="range" id="blSlider" min="0" max="15" step="0.5" value="0" oninput="applyVF()"><span class="sl">흐림</span><span class="sval" id="blVal">0</span></div>
+      <div class="panel-title">💫 배경 흐림</div>
+      <div class="srow"><span class="sl">없음</span><input type="range" id="blSlider" min="0" max="20" step="0.5" value="0" oninput="applyBgBlur(this.value)"><span class="sl">강함</span><span class="sval" id="blVal">0</span></div>
+      <div class="panel-title" style="margin-top:8px;">🔍 줌</div>
+      <div class="srow"><span class="sl">축소</span><input type="range" id="zoomSlider" min="1" max="3" step="0.1" value="1" oninput="applyZoom(this.value)"><span class="sl">확대</span><span class="sval" id="zoomVal">1.0</span></div>
       <div class="panel-title" style="margin-top:8px;">🎞 필터</div>
       <div class="fchips" id="camFilterChips"></div>
     </div>
@@ -258,6 +259,8 @@ let palmHeld=false,palmHeldStart=0;
 let overlayItems=[],dragging=null,dragOX=0,dragOY=0;
 let txtColor='#ff6b9d';
 let bgAnimFrame=null;
+let zoomLevel=1;
+let bgBlur=0;
 let hwDrawing=false,hwColor='#ff6b9d',hwSize=4,hwLastX=0,hwLastY=0;
 
 const COLORS=['#ff6b9d','#c77dff','#7bb7fa','#06d6a0','#ffd166','#ef476f','#f8edeb','#e0fbfc','#fff9c4','#fce4ec','#1a1a2e','#2d6a4f','#fff'];
@@ -289,9 +292,9 @@ async function init(){
   buildColorGrid();buildGradGrid();buildPatGrid();
   buildFilterChips('camFilterChips',false);buildFilterChips('resFilterChips',true);
   buildStickerGrid();buildTxtColors();buildDotRow();updateAspect();
-  document.getElementById('brVal').textContent='1.0';
   document.getElementById('blVal').textContent='0';
   document.getElementById('bgOpacityVal').textContent='0.2';
+  document.getElementById('zoomVal').textContent='1.0';
   await startCam();initMediaPipe();initOverlay();initHW();
 }
 
@@ -314,7 +317,7 @@ async function startCam(){
       startBgLoop();
     };
     v.srcObject=stream;
-    v.style.transform='scaleX(-1)';
+    applyVideoTransform();
     toast('📷 카메라 연결됨!');
   }catch(e){
     // facingMode 없이 재시도
@@ -324,7 +327,7 @@ async function startCam(){
       v.onloadedmetadata=()=>{v.play().catch(()=>{});};
       v.oncanplay=()=>{videoReady=true;setStat('on','🤚 손바닥을 카메라에 보여주세요!');startBgLoop();};
       v.srcObject=stream;
-      v.style.transform='scaleX(-1)';
+      applyVideoTransform();
       toast('📷 카메라 연결됨!');
     }catch(e2){
       setStat('','⚠️ 카메라 권한을 허용해주세요');
@@ -332,7 +335,17 @@ async function startCam(){
     }
   }
 }
-function flipCam(){isMirrored=!isMirrored;document.getElementById('videoEl').style.transform=isMirrored?'scaleX(-1)':'scaleX(1)';}
+function flipCam(){isMirrored=!isMirrored;applyVideoTransform();}
+function applyVideoTransform(){
+  const v=document.getElementById('videoEl');
+  const scaleX=isMirrored?-zoomLevel:zoomLevel;
+  v.style.transform=`scaleX(${scaleX}) scaleY(${zoomLevel})`;
+}
+function applyZoom(val){
+  zoomLevel=parseFloat(val);
+  document.getElementById('zoomVal').textContent=zoomLevel.toFixed(1);
+  applyVideoTransform();
+}
 function setStat(cls,msg){document.getElementById('sdot').className='sdot'+(cls?' '+cls:'');document.getElementById('stext').textContent=msg;}
 
 function startBgLoop(){
@@ -345,17 +358,25 @@ function drawBgCanvas(){
   const bc=document.getElementById('bgCanvas');
   const w=va.offsetWidth,h=va.offsetHeight;
   if(!w||!h)return;
-  // 크기가 바뀔 때만 재설정 (매 프레임 재설정하면 깜빡임)
   if(bc.width!==w||bc.height!==h){bc.width=w;bc.height=h;}
   const ctx=bc.getContext('2d');
   ctx.clearRect(0,0,w,h);
   if(bgType==='none')return;
+  // 배경 블러 적용
+  ctx.filter=bgBlur>0?`blur(${bgBlur}px)`:'none';
   ctx.globalAlpha=bgOpacity;
   if(bgType==='color'){ctx.fillStyle=bgVal;ctx.fillRect(0,0,w,h);}
   else if(bgType==='grad'){drawGrad(ctx,bgVal,w,h);}
-  else if(bgType==='pat'){ctx.fillStyle=bgVal.b;ctx.fillRect(0,0,w,h);ctx.globalAlpha=bgOpacity*0.4;drawPat(ctx,bgVal.p,w,h);}
+  else if(bgType==='pat'){
+    ctx.fillStyle=bgVal.b;
+    ctx.fillRect(0,0,w,h);
+    ctx.globalAlpha=bgOpacity*0.5;
+    drawPat(ctx,bgVal.p,w,h);
+    ctx.globalAlpha=bgOpacity;
+  }
   else if(bgType==='image'&&bgImg){const s=Math.max(w/bgImg.width,h/bgImg.height);ctx.drawImage(bgImg,(w-bgImg.width*s)/2,(h-bgImg.height*s)/2,bgImg.width*s,bgImg.height*s);}
   ctx.globalAlpha=1;
+  ctx.filter='none';
 }
 function updateBgOpacity(){bgOpacity=parseFloat(document.getElementById('bgOpacity').value);document.getElementById('bgOpacityVal').textContent=bgOpacity.toFixed(2);}
 
@@ -492,17 +513,31 @@ function doCapture(){
   const ctx=off.getContext('2d');ctx.scale(dpr,dpr);
   ctx.save();
   if(isMirrored){ctx.translate(vw,0);ctx.scale(-1,1);}
-  const br=parseFloat(document.getElementById('brSlider').value);
-  const bl=parseFloat(document.getElementById('blSlider').value);
-  let f=`brightness(${br})`;if(camFilter!=='none')f+=' '+camFilter;if(bl>0)f+=` blur(${bl}px)`;
-  ctx.filter=f;ctx.drawImage(video,0,0,vw,vh);ctx.restore();ctx.filter='none';
+  // 줌 적용 — 중앙 기준으로 확대
+  if(zoomLevel!==1){
+    ctx.translate(vw/2,vh/2);
+    ctx.scale(zoomLevel,zoomLevel);
+    ctx.translate(-vw/2,-vh/2);
+  }
+  ctx.filter=camFilter!=='none'?camFilter:'none';
+  ctx.drawImage(video,0,0,vw,vh);ctx.restore();ctx.filter='none';
   if(bgType!=='none'){
+    ctx.save();
+    if(bgBlur>0) ctx.filter=`blur(${bgBlur}px)`;
     ctx.globalAlpha=bgOpacity;
     if(bgType==='color'){ctx.fillStyle=bgVal;ctx.fillRect(0,0,vw,vh);}
-    else if(bgType==='grad')drawGrad(ctx,bgVal,vw,vh);
-    else if(bgType==='pat'){ctx.fillStyle=bgVal.b;ctx.fillRect(0,0,vw,vh);}
+    else if(bgType==='grad') drawGrad(ctx,bgVal,vw,vh);
+    else if(bgType==='pat'){
+      ctx.fillStyle=bgVal.b;
+      ctx.fillRect(0,0,vw,vh);
+      ctx.globalAlpha=bgOpacity*0.5;
+      drawPat(ctx,bgVal.p,vw,vh);
+      ctx.globalAlpha=bgOpacity;
+    }
     else if(bgType==='image'&&bgImg){const s=Math.max(vw/bgImg.width,vh/bgImg.height);ctx.drawImage(bgImg,(vw-bgImg.width*s)/2,(vh-bgImg.height*s)/2,bgImg.width*s,bgImg.height*s);}
     ctx.globalAlpha=1;
+    ctx.filter='none';
+    ctx.restore();
   }
   shots.push(off);
   updateDots();updateLabel();isCapturing=false;
@@ -832,12 +867,13 @@ function setShotCount(n,btn){shotCount=n;shots=[];document.querySelectorAll('.ss
 function setRatio(w,h,btn){rW=w;rH=h;document.querySelectorAll('.ratio-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');updateAspect();}
 function setTimer(t,btn){timerDelay=t;document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
 function setActiveSw(el){document.querySelectorAll('.sw').forEach(s=>s.classList.remove('active'));el.classList.add('active');}
+function applyBgBlur(val){
+  bgBlur=parseFloat(val);
+  document.getElementById('blVal').textContent=bgBlur.toFixed(1);
+}
 function applyVF(){
-  const br=parseFloat(document.getElementById('brSlider').value);
-  const bl=parseFloat(document.getElementById('blSlider').value);
-  document.getElementById('brVal').textContent=br.toFixed(1);document.getElementById('blVal').textContent=bl.toFixed(1);
-  let f=`brightness(${br})`;if(camFilter!=='none')f+=' '+camFilter;if(bl>0)f+=` blur(${bl}px)`;
-  document.getElementById('videoEl').style.filter=f;
+  const v=document.getElementById('videoEl');
+  v.style.filter=camFilter!=='none'?camFilter:'none';
 }
 function loadBgImg(inp){const file=inp.files[0];if(!file)return;const img=new Image();img.onload=()=>{bgType='image';bgVal=img;bgImg=img;toast('🖼 배경 이미지 설정됨!');};img.src=URL.createObjectURL(file);}
 function switchBgTab(t,btn){document.querySelectorAll('.stab').forEach(x=>x.classList.remove('active'));document.getElementById({c:'bgC',g:'bgG',p:'bgP',u:'bgU'}[t]).classList.add('active');document.querySelectorAll('.bg-tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
@@ -846,7 +882,7 @@ function updateDots(){for(let i=0;i<shotCount;i++){const d=document.getElementBy
 function updateLabel(){document.getElementById('shotLabel').textContent=`${shots.length} / ${shotCount}`;}
 function resetShots(){shots=[];overlayItems=[];buildDotRow();switchTab('cam');}
 function drawGrad(ctx,css,w,h){const cs=css.match(/#[0-9a-fA-F]{3,8}/g)||['#c77dff','#ff6b9d'];const g=ctx.createLinearGradient(0,0,w,h);cs.forEach((c,i)=>g.addColorStop(i/(cs.length-1),c));ctx.fillStyle=g;ctx.fillRect(0,0,w,h);}
-function drawPat(ctx,p,w,h){ctx.save();ctx.globalAlpha=0.3;const m={heart:'❤️',star:'⭐',dot:'⬤',check:'✓',flower:'🌸',cloud:'☁️',rainbow:'🌈',sky:'✈️'};const em=m[p]||'✨';const sz=24;ctx.font=`${sz}px serif`;ctx.textAlign='center';for(let y=sz;y<h+sz;y+=sz*1.8){for(let x=(Math.floor(y/sz)%2===0?0:sz);x<w+sz;x+=sz*2)ctx.fillText(em,x,y);}ctx.restore();}
+function drawPat(ctx,p,w,h){const m={heart:'❤️',star:'⭐',dot:'⬤',check:'✓',flower:'🌸',cloud:'☁️',rainbow:'🌈',sky:'✈️'};const em=m[p]||'✨';const sz=24;ctx.font=`${sz}px serif`;ctx.textAlign='center';for(let y=sz;y<h+sz;y+=sz*1.8){for(let x=(Math.floor(y/sz)%2===0?0:sz);x<w+sz;x+=sz*2)ctx.fillText(em,x,y);}}
 function switchTab(t){
   document.getElementById('tCam').classList.toggle('active',t==='cam');
   document.getElementById('tRes').classList.toggle('active',t==='res');
