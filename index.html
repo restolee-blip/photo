@@ -344,7 +344,20 @@ async function init(){
   document.getElementById('blVal').textContent='0';
   document.getElementById('bgOpacityVal').textContent='0.2';
   document.getElementById('zoomVal').textContent='1.0';
-  await startCam();initMediaPipe();initOverlay();initHW();
+  await startCam();
+  // 카메라 완전히 준비된 후 손 인식 시작 (최대 5초 대기)
+  let waited=0;
+  const waitForCamera=setInterval(()=>{
+    waited+=100;
+    if(videoReady){
+      clearInterval(waitForCamera);
+      initMediaPipe();
+    } else if(waited>5000){
+      clearInterval(waitForCamera);
+      initMediaPipe(); // 타임아웃 후에도 시도
+    }
+  },100);
+  initOverlay();initHW();
 }
 
 async function startCam(){
