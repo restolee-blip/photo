@@ -391,7 +391,7 @@ body {
         <span class="upload-icon">👶</span>
         <h2>아기 사진을 올려주세요</h2>
         <p>JPG, PNG 파일 지원 · 최대 10MB</p>
-        <button class="upload-btn" onclick="event.stopPropagation()">📁 사진 선택하기</button>
+        <button class="upload-btn" onclick="event.stopPropagation(); document.getElementById('fileInput').click()">📁 사진 선택하기</button>
       </div>
       <div id="uploadPreview" style="display:none">
         <img id="previewImg" class="preview-photo" alt="미리보기">
